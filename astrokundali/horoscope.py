@@ -293,7 +293,7 @@ def generate_report(
     )
     element_interp = element_section['interpretation']
     interp.append(
-        f"You are {" ".join(element_interp)  if element_interp else "none"}"
+        f'You are {" ".join(element_interp)  if element_interp else "none"}'
     )
     report = {
         'ascendant':       asc_section,

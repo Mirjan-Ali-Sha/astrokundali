@@ -1,6 +1,5 @@
-# project
-## name = "astrokundali"
-- version = "0.1.0"
+# astrokundali
+- version = "0.1.2"
 - description = "Flexible astrokundali package with Different house calculation methods and interpretation JSONs"
 - authors = [ { name="Mirjan Ali Sha", email="mastools.help@gmail.com" } ]
 - readme = "README.md"
@@ -12,10 +11,9 @@
 
 # Example Usage (Windows)
 <pre>
-  cd .\astrokundali\
-  .\.venv\Scripts\activate
-  pip install -e . [Optional]
-  python
+  pip install astrokundali
+  or
+  !pip install astrokundali [Notebook]
     </pre>
   **Configure AstroData**
   <pre>
