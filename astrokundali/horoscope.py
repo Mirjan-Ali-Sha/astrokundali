@@ -275,8 +275,8 @@ def generate_report(
     planet_texts = []
     for pl in sorted(set(ar_pl)):  # your arudha planets list
         planet_texts += ARUDHA_DATA.get('planets', {}).get(pl, [])
-    # interpretation += planet_texts
-    interpretation += f'{" ".join(planet_texts)  if planet_texts else "none"}'
+    interpretation += planet_texts
+    # interpretation += f'{" ".join(planet_texts)  if planet_texts else "none"}'
 
     arudha_section = {
         'house':         ar,
