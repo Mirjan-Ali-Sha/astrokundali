@@ -7,6 +7,7 @@ from .astro_chart import House
 from .astro_data import AstroData
 from .houses import equal_houses, get_house_cusps
 from .dispositions import DEBILITATIONS
+from typing import List, Dict, Any
 
 # House drawing definitions (assumed imported or defined above)
 HOUSE_VERTICES = [
@@ -23,26 +24,12 @@ HOUSE_VERTICES = [
     [(300,225),(400,300),(400,150)],
     [(300,225),(200,300),(400,300)]
 ]
-# Layout definitions
-# HOUSE_VERTICES = [
-#     [(100,225),(200,300),(300,225),(200,150)],
-#     [(100,225),(  0,300),(200,300)],
-#     [(  0,150),(  0,300),(100,225)],
-#     [(  0,150),(100,225),(200,150),(100, 75)],
-#     [(  0,  0),(  0,150),(100, 75)],
-#     [(  0,  0),(100, 75),(200,  0)],
-#     [(100, 75),(200,150),(300, 75),(200,  0)],
-#     [(200,  0),(300, 75),(400,  0)],
-#     [(300, 75),(400,150),(400,  0)],
-#     [(300, 75),(200,150),(300,225),(400,150)],
-#     [(300,225),(400,300),(400,150)],
-#     [(300,225),(200,300),(400,300)]
-# ]
-# CENTERS = [
-#     (190,75),(100,30),(30,75),(90,150),
-#     (30,225),(90,278),(190,225),(290,278),
-#     (360,225),(290,150),(360,75),(290,30)
-# ]
+
+CENTERS = [
+    (190,75),(100,30),(30,75),(90,150),
+    (30,225),(90,278),(190,225),(290,278),
+    (360,225),(290,150),(360,75),(290,30)
+]
 PLANET_ABBR = {
     'sun':'Su','moon':'Mo','mercury':'Me','venus':'Ve',
     'mars':'Ma','jupiter':'Ju','saturn':'Sa','uranus':'Ur',
@@ -167,7 +154,7 @@ def _plot_chart(
     fig, ax = plt.subplots(figsize=(6,6))
 
     # Title up near the top
-    fig.suptitle(title, fontsize=16, y=0.87, weight='bold')
+    fig.suptitle(title, fontsize=16, y=0.88, weight='bold')
     fig.subplots_adjust(top=0.85, bottom=0.07, left=0.03, right=0.97)
 
     ax.set_xlim(0,400)
@@ -300,6 +287,42 @@ def _plot_chart(
 
 #     fig.text(0.5, 0.02, description, ha='center', fontsize=12)
 #     plt.show()
+
+
+def format_houses(houses: List[House]) -> List[Dict[str, Any]]:
+    """
+    Convert list[House] into a serializable, human-readable list of dicts.
+    """
+    def lon_to_dms(lon: float) -> str:
+        """
+        Convert a decimal longitude into D:MM:SS format within its 30° sign.
+        """
+        # Extract degrees within the 30° sign
+        total = lon % 30
+        d = int(total)
+        m_full = (total - d) * 60
+        m = int(m_full)
+        s = int((m_full - m) * 60)
+        return f"{d:02d}:{m:02d}:{s:02d}"
+
+    formatted = []
+    for idx, h in enumerate(houses, start=1):
+        house_entry: Dict[str, Any] = {
+            "house_number": idx,
+            "rashi": h.sign_num,
+            "is_ascendant": getattr(h, "is_asc", False),
+            "planets": {}
+        }
+        for pl, dat in h.planets.items():
+            raw_lon = dat["lon"]
+            house_entry["planets"][pl] = {
+                "degree_raw": round(raw_lon, 6),
+                "degree_dms": lon_to_dms(raw_lon),
+                "retrograde": bool(dat.get("retro", False)),
+                "debilitated": bool(dat.get("debilitated", False))
+            }
+        formatted.append(house_entry)
+    return formatted
 
 
 def plot_lagna_chart(

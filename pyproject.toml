@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "astrokundali"
-version = "0.2.0"
-description = "Generate and plot North-Indian Lagna Kundali charts using pyswisseph"
+version = "0.2.1"
+description = "Generate and plot North-Indian Lagna Kundali charts using pyswisseph. Flexible astrokundali package with Different house calculation methods and interpretation JSONs"
 readme = "README.md"
 requires-python = ">=3.8"
 authors = [
@@ -18,7 +18,8 @@ classifiers = [
   "Intended Audience :: Religion",
   "Intended Audience :: Education",
   "Topic :: Education",
-  "Topic :: Religion"
+  "Topic :: Religion",
+  "Topic :: Scientific/Engineering :: Astronomy"
 ]
 dependencies = [
   "pyswisseph>=2.10.3.2",

@@ -51,6 +51,10 @@ class AstroData:
         self.lon = longitude
         self._sid_mode = AYANAMSA[ayanamsa.lower()]
 
+        # Remember the UTC offset so others can read it later
+        self.utc_offset_hours   = utc_offset_hours
+        self.utc_offset_minutes = utc_offset_minutes
+
     def get_rashi_data(self) -> dict:
         """
         Returns a dict of:
