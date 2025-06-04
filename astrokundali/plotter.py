@@ -9,7 +9,8 @@ from .houses import equal_houses, get_house_cusps
 from .dispositions import DEBILITATIONS
 from typing import List, Dict, Any
 
-# House drawing definitions (assumed imported or defined above)
+# ─── House‐drawing definitions ───────────────────────────────────────────
+
 HOUSE_VERTICES = [
     [(100,225),(200,300),(300,225),(200,150)],
     [(100,225),(  0,300),(200,300)],
@@ -30,27 +31,31 @@ CENTERS = [
     (30,225),(90,278),(190,225),(290,278),
     (360,225),(290,150),(360,75),(290,30)
 ]
+
 PLANET_ABBR = {
     'sun':'Su','moon':'Mo','mercury':'Me','venus':'Ve',
     'mars':'Ma','jupiter':'Ju','saturn':'Sa','uranus':'Ur',
     'neptune':'Ne','pluto':'Pl','north_node':'Ra','south_node':'Ke'
 }
 
-def _build_houses(raw: dict, house_system: str, astrodata) -> list[House]:
+def _build_houses(raw: dict, house_system: str, astrodata: AstroData) -> List[House]:
     """
-    Build House objects from raw rashi/divisional data,
-    tagging both retrograde and debilitation status.
+    Build 12 House objects (House.sign_num tells the zodiac sign)
+    and put each planet into the correct house‐index.  We also
+    mark retrograde + debilitation flags here.
     """
     asc_lon = raw['ascendant']['lon']
     sign0   = raw['ascendant']['sign_num']
 
-    # 1) Compute cusps
+    # 1) Compute cusp longitudes
     if house_system == 'equal':
         cusps = equal_houses(asc_lon)
     else:
         flags = swe.FLG_SWIEPH | swe.FLG_SPEED | swe.FLG_SIDEREAL
         _, ascmc = swe.houses_ex(
-            astrodata.julian_day, astrodata.lat, astrodata.lon,
+            astrodata.julian_day,
+            astrodata.lat,
+            astrodata.lon,
             b'B', flags
         )
         mc = ascmc[1]
@@ -62,8 +67,8 @@ def _build_houses(raw: dict, house_system: str, astrodata) -> list[House]:
             mc = mc
         )
 
-    # 2) Initialize House objects
-    houses = []
+    # 2) Create an empty House at each of the 12 positions
+    houses: List[House] = []
     s = sign0
     for _ in range(12):
         h = House(s)
@@ -71,51 +76,56 @@ def _build_houses(raw: dict, house_system: str, astrodata) -> list[House]:
         s = 1 if s == 12 else s + 1
     houses[0].is_asc = True
 
-    # 3) Assign planets + flags
+    # 3) Assign each planet (and mark retrograde + debilitated)
     for name, info in raw.items():
         if name == 'ascendant':
             continue
         lon    = info['lon']
         retro  = info.get('retro', False)
         sign_n = info.get('sign_num')
-        # Debilitated if sign_num matches the 'fall' sign :contentReference[oaicite:2]{index=2}
-        deb = (name in DEBILITATIONS and DEBILITATIONS[name] == sign_n)
+        deb    = (name in DEBILITATIONS and DEBILITATIONS[name] == sign_n)
 
         for i in range(12):
-            start, end = cusps[i], cusps[(i+1) % 12]
-            in_house = (start <= lon < end) if end > start else (lon >= start or lon < end)
+            start = cusps[i]
+            end   = cusps[(i+1) % 12]
+            if end > start:
+                in_house = (start <= lon < end)
+            else:
+                # wraps around 360° → 0°
+                in_house = (lon >= start or lon < end)
+
             if in_house:
                 houses[i].planets[name] = {
-                    'lon': lon,
-                    'retro': retro,
+                    'lon':         lon,
+                    'retro':       retro,
                     'debilitated': deb
                 }
                 break
 
     return houses
 
+# ─── SIGN / PLANET SHIFT for label placement ────────────────────────────────
 
-# (1) Define how far to shift sign‑numbers toward the chart center
 SIGN_SHIFT = {
-    'top':        ( 0, +5),
-    'bottom':     ( 0, -5),
-    'left':       (+5,  0),
-    'right':      (-5,  0),
-    'center':     ( 0,  0),
-    'top-left':   (+3, +3),
-    'top-right':  (-3, +3),
-    'bot-left':   (+3, -3),
-    'bot-right':  (-3, -3),
+    'top':       ( 0, +5),
+    'bottom':    ( 0, -5),
+    'left':      (+5,  0),
+    'right':     (-5,  0),
+    'center':    ( 0,  0),
+    'top-left':  (+3, +3),
+    'top-right': (-3, +3),
+    'bot-left':  (+3, -3),
+    'bot-right': (-3, -3),
 }
-
-# (2) Planets move opposite to sign‑numbers
-PLANET_SHIFT = { region: (-dx, -dy)
-                 for region, (dx, dy) in SIGN_SHIFT.items() }
+PLANET_SHIFT = { region: (-dx, -dy) for region,(dx,dy) in SIGN_SHIFT.items() }
 
 def _region(cx: float, cy: float, width=400, height=300) -> str:
     """
-    Bucket (cx,cy) into one of:
-       'top', 'bottom', 'left', 'right', 'center', plus 4 corners.
+    Bucket a point (cx,cy) into one of:
+      'top', 'bottom', 'left','right','center',
+      'top-left','top-right','bot-left','bot-right'.
+    Used to decide how to shift sign‐numbers inward
+    and planet–labels outward.
     """
     x3 = width  / 3
     y3 = height / 3
@@ -132,78 +142,89 @@ def _region(cx: float, cy: float, width=400, height=300) -> str:
     elif cx > 2*x3:
         horiz = 'right'
 
-    # corners
     if vert in ('top','bottom') and horiz in ('left','right'):
-        key = f"{vert[:-1]}-{horiz}" if vert.endswith('t') else f"{vert}-{horiz}"
-        # normalize naming: 'top-left','bottom-right', etc.
-        return key.replace('bottom','bot')
+        if vert == 'top':
+            return f"top-{horiz}"
+        else:
+            return f"bot-{horiz}"
     return vert if vert != 'center' else horiz
 
 def _plot_chart(
-    houses: list[House],
+    houses: List[House],
     title: str,
     description: str,
     show_retro: bool = False
 ):
     """
-    Draw North‑Indian Kundali with:
-      • sign‑numbers & planet labels shifted per SIGN_SHIFT/PLANET_SHIFT
-      • planet labels clamped within chart bounds
-      • bottom description moved up
+    Draw the 12‐house North‐Indian diamond chart. We:
+      • place each diamond at its HOUSE_VERTICES,
+      • write the sign number (shifted inward),
+      • write each planet’s “Name & deg°” (shifted outward),
+      • annotate a superscript “Re” if retrograde,
+      • annotate a subscript “De” if debilitated,
+      • clamp all labels inside the 5–395 × 5–295 range,
+      • and keep Matplotlib’s default Y‐axis (0 at bottom, 300 at top).
     """
     fig, ax = plt.subplots(figsize=(6,6))
 
-    # Title up near the top
-    fig.suptitle(title, fontsize=16, y=0.88, weight='bold')
+    # 1) Title near the top, slightly larger
+    fig.suptitle(title, fontsize=18, y=0.88, weight='bold')
     fig.subplots_adjust(top=0.85, bottom=0.07, left=0.03, right=0.97)
 
+    # 2) Use default orientation: 0 ≤ y ≤ 300 (0 at bottom)
     ax.set_xlim(0,400)
-    ax.set_ylim(0,300)
+    ax.set_ylim(0,300)            # ← keep upward = larger y
     ax.set_aspect('equal')
     ax.axis('off')
-    ax.invert_yaxis()
 
-    # draw house outlines
+    # 3) Draw all twelve house outlines
     for verts in HOUSE_VERTICES:
         ax.add_patch(Polygon(verts, closed=True, fill=False, edgecolor='black', linewidth=1))
 
-    # annotate each house
+    # 4) Annotate each house
     for i, h in enumerate(houses):
         xs, ys = zip(*HOUSE_VERTICES[i])
         cx, cy = sum(xs)/len(xs), sum(ys)/len(ys)
 
-        region    = _region(cx, cy)
-        sdx, sdy  = SIGN_SHIFT.get(region, (0,0))
-        pdx, pdy  = PLANET_SHIFT.get(region, (0,0))
+        region   = _region(cx, cy)
+        sdx, sdy = SIGN_SHIFT.get(region, (0,0))
+        pdx, pdy = PLANET_SHIFT.get(region, (0,0))
 
-        # draw sign number
-        ax.text(cx + sdx, cy + sdy, str(h.sign_num),
-                ha='center', va='center',
-                fontsize=10, weight='bold', color='blue')
+        # 4a) Draw the sign number (in blue, shifted inward)
+        ax.text(
+            cx + sdx, cy + sdy,
+            str(h.sign_num),
+            ha='center', va='center',
+            fontsize=10, weight='bold', color='blue'
+        )
 
-        # draw planets
+        # 4b) Draw each planet in that house (shifted outward)
         for j, (pl, dat) in enumerate(h.planets.items()):
             angle = 2 * math.pi * j / max(len(h.planets),1)
-            # raw coords
-            x = cx + pdx + 20 * math.cos(angle)
-            y = cy + pdy + 20 * math.sin(angle)
-            # clamp to [5,395] × [5,295]
-            x = min(max(x, 5), 395)
-            y = min(max(y, 5), 295)
+            x0 = cx + pdx + 20 * math.cos(angle)
+            y0 = cy + pdy + 20 * math.sin(angle)
 
-            label = f"{PLANET_ABBR.get(pl,pl[:2])} {int(dat['lon']%30)}°"
+            # clamp inside [5,395] × [5,295]
+            x = min(max(x0, 5), 395)
+            y = min(max(y0, 5), 295)
+
+            deg = int(dat['lon'] % 30)
+            label = f"{PLANET_ABBR.get(pl,pl[:2])} {deg}°"
             if show_retro and dat.get('retro', False):
                 label = f"{label}$^{{Re}}$"
             if show_retro and dat.get('debilitated', False):
                 label = f"{label}$_{{De}}$"
 
-            ax.text(x, y, label,
-                    ha='center', va='center',
-                    fontsize=8, weight='bold', color='orange')
+            ax.text(
+                x, y, label,
+                ha='center', va='center',
+                fontsize=8, weight='bold', color='orange'
+            )
 
-    # move bottom description up slightly
+    # 5) Bottom description, moved up slightly so it doesn’t collide
     fig.text(0.5, 0.06, description, ha='center', fontsize=12)
     plt.show()
+
 
 
     

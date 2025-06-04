@@ -1,10 +1,12 @@
 # astrokundali
 - version = "0.1.2"
 - description = "Flexible astrokundali package with Different house calculation methods and interpretation JSONs"
-- authors = [ { name="Mirjan Ali Sha", email="mastools.help@gmail.com" } ]
-- readme = "README.md"
+- authors = name="Mirjan Ali Sha"
 - requires-python = ">=3.7"
 
+**Request:**
+If anyone would like to collaborate or discuss new features, please send me an email. I will get in touch with you.<br>
+If you want access to this project's source code, please do the same. I am planning to make this project fully open source in the near future.
 <hr>
 
 # USER OPTIONS

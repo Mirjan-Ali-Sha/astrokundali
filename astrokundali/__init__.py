@@ -14,7 +14,7 @@ from .horoscope   import generate_report, json_sanitize, get_ascendant_element
 from .yogas_detector import detect_yogas
 from .birthtime_finder import find_birthtime_ranges
 from .birthtime_finder import _ascendant_sign
-from .ashtakvarga import compute_sarva_ashtakvarga, compute_full_bhinna_ashtakvarga, plot_sarva_ashtakvarga, plot_bhinna_ashtakvarga
+# from .ashtakvarga import compute_sarva_ashtakvarga, compute_full_bhinna_ashtakvarga, plot_sarva_ashtakvarga, plot_bhinna_ashtakvarga
 # Chart_Name, --> Rashi in correct house --> Planet in correct house
 # plot_lagna_chart, --> ✓ --> ✓
 # plot_moon_chart,  --> ✓ --> ✓
