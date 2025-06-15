@@ -1,6 +1,7 @@
 .venv/
 build/
 dist/
-astrokundali.egg-info/
+test/
+*.egg-info/
 __pycache__/
 astrokundali/__pycache__/
