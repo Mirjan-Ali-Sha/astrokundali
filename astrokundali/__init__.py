@@ -6,7 +6,7 @@ from .plotter     import *
 # plot_drekkana_chart, plot_chaturthamsha_chart, plot_saptamamsha_chart, plot_navamsha_chart, plot_dashamamsha_chart,
 # plot_dwadashamsha_chart, plot_shodashamsha_chart, plot_vimshamsha_chart, plot_shashtiamsha_chart,
 # plot_chatuvimshamsha_chart, plot_saptvimshamsha_chart, plot_trishamsha_chart, plot_khavedamsha_chart,
-# plot_akshavedamsha_chart, plot_shashtiamsha_chart, format_houses
+# plot_akshavedamsha_chart, plot_shashtiamsha_chart, format_houses, plot_comprehensive_chart
 from .dispositions import get_dispositions
 from .houses      import get_house_cusps, HOUSE_SYSTEMS
 from .match       import match_kundli
