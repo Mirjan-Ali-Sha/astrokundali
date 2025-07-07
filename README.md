@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="./icon.png" alt="Open Geodata API Icon" width="150" height="150" />
+</p>
+
 # astrokundali
 - version = "0.1.2"
 - description = "Flexible astrokundali package with Different house calculation methods and interpretation JSONs"

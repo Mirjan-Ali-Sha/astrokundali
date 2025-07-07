@@ -8,7 +8,8 @@ from .astro_data import AstroData
 from .houses import equal_houses, get_house_cusps
 from .dispositions import DEBILITATIONS
 from typing import List, Dict, Any
-from .dispositions import DRISHTI, _anticlockwise_house, SIGN_LORDS, get_dispositions
+# from .dispositions import DRISHTI, _anticlockwise_house, SIGN_LORDS, get_dispositions
+from .dispositions import _anticlockwise_house
 
 # ─── House‐drawing definitions ───────────────────────────────────────────
 
@@ -226,6 +227,138 @@ def _plot_chart(
     fig.text(0.5, 0.06, description, ha='center', fontsize=12)
     plt.show()
 
+def calculate_corrected_varga(longitude: float, division: int, chart_type: str) -> tuple:
+    """Calculate correct Varga position using traditional Vedic methods"""
+    sign = int(longitude // 30) + 1
+    degree = longitude % 30
+    
+    if chart_type == 'D2':  # Hora Chart
+        if sign % 2 == 1:  # Odd signs
+            new_sign = 5 if degree < 15 else 4  # Leo : Cancer
+        else:  # Even signs  
+            new_sign = 4 if degree < 15 else 5  # Cancer : Leo
+        new_lon = (new_sign - 1) * 30 + degree
+        
+    elif chart_type == 'D3':  # Drekkana Chart
+        drekkana = int(degree // 10)
+        if drekkana == 0:
+            new_sign = sign
+        elif drekkana == 1:
+            new_sign = ((sign + 3) % 12) + 1
+        else:
+            new_sign = ((sign + 7) % 12) + 1
+        new_lon = (new_sign - 1) * 30 + (degree % 10) * 3
+        
+    elif chart_type == 'D10':  # Dashamamsa Chart
+        dashamamsa = int(degree // 3)
+        if sign % 2 == 1:  # Odd signs
+            new_sign = ((sign - 1 + dashamamsa) % 12) + 1
+        else:  # Even signs
+            new_sign = ((sign + 7 + dashamamsa) % 12) + 1
+        new_lon = (new_sign - 1) * 30 + (degree % 3) * 10
+        
+    elif chart_type == 'D12':  # Dwadashamsa Chart
+        dwadashamsa = int(degree // 2.5)
+        new_sign = ((sign - 1 + dwadashamsa) % 12) + 1
+        new_lon = (new_sign - 1) * 30 + (degree % 2.5) * 12
+        
+    elif chart_type == 'D24':  # Chaturvimshamsa Chart
+        chaturvimshamsa = int(degree // 1.25)
+        if sign % 2 == 1:  # Odd signs start from Leo
+            new_sign = ((4 + chaturvimshamsa) % 12) + 1
+        else:  # Even signs start from Cancer
+            new_sign = ((3 + chaturvimshamsa) % 12) + 1
+        new_lon = (new_sign - 1) * 30 + (degree % 1.25) * 24
+        
+    elif chart_type == 'D27':  # Saptavimshamsa Chart
+        saptavimshamsa = int(degree // (30/27))
+        fire_signs = [1, 5, 9]
+        earth_signs = [2, 6, 10]
+        air_signs = [3, 7, 11]
+        water_signs = [4, 8, 12]
+        
+        if sign in fire_signs:
+            start = 1  # Aries
+        elif sign in earth_signs:
+            start = 4  # Cancer
+        elif sign in air_signs:
+            start = 7  # Libra
+        else:  # water_signs
+            start = 10  # Capricorn
+            
+        new_sign = ((start - 1 + saptavimshamsa) % 12) + 1
+        new_lon = (new_sign - 1) * 30 + (degree % (30/27)) * 27
+        
+    elif chart_type == 'D30':  # Trimshamsa Chart
+        if degree < 5:
+            new_sign = 11  # Mars - Aquarius
+        elif degree < 10:
+            new_sign = 6   # Mercury - Virgo
+        elif degree < 18:
+            new_sign = 9   # Jupiter - Sagittarius
+        elif degree < 25:
+            new_sign = 7   # Venus - Libra
+        else:
+            new_sign = 10  # Saturn - Capricorn
+        new_lon = (new_sign - 1) * 30 + degree  # Keep original degree
+        
+    elif chart_type == 'D40':  # Khavedamsa Chart
+        khavedamsa = int(degree // 0.75)
+        if sign % 2 == 1:  # Odd signs start from Aries
+            new_sign = ((0 + khavedamsa) % 12) + 1
+        else:  # Even signs start from Libra
+            new_sign = ((6 + khavedamsa) % 12) + 1
+        new_lon = (new_sign - 1) * 30 + (degree % 0.75) * 40
+        
+    elif chart_type == 'D45':  # Akshavedamsa Chart
+        akshavedamsa = int(degree // (30/45))
+        movable_signs = [1, 4, 7, 10]
+        fixed_signs = [2, 5, 8, 11]
+        dual_signs = [3, 6, 9, 12]
+        
+        if sign in movable_signs:
+            start = 1  # Aries
+        elif sign in fixed_signs:
+            start = 5  # Leo
+        else:  # dual_signs
+            start = 9  # Sagittarius
+            
+        new_sign = ((start - 1 + akshavedamsa) % 12) + 1
+        new_lon = (new_sign - 1) * 30 + (degree % (30/45)) * 45
+        
+    elif chart_type == 'D60':  # Shashtiamsa Chart
+        shashtiamsa = int(degree // 0.5)
+        new_sign = ((sign - 1 + shashtiamsa) % 12) + 1
+        new_lon = (new_sign - 1) * 30 + (degree % 0.5) * 60
+        
+    else:
+        # Default - keep original for working charts
+        new_sign = int((longitude * division) % 360 / 30) + 1
+        new_lon = (longitude * division) % 360
+        
+    return new_sign, new_lon
+
+def apply_house_offset(raw_data: dict, house_offset: int) -> dict:
+    """Apply house offset by adjusting ascendant"""
+    if house_offset == 0:
+        return raw_data
+    
+    adjusted_raw = raw_data.copy()
+    asc_info = raw_data['ascendant']
+    
+    # Calculate new ascendant sign with offset
+    original_sign = asc_info['sign_num']
+    new_sign = ((original_sign - 1 + house_offset) % 12) + 1
+    
+    # Keep same longitude but update sign_num
+    adjusted_raw['ascendant'] = {
+        'lon': asc_info['lon'],
+        'sign_num': new_sign,
+        'retro': False
+    }
+    
+    return adjusted_raw
+
 
 def format_houses(houses: List[House]) -> List[Dict[str, Any]]:
     """
@@ -306,23 +439,68 @@ def plot_navamsa_chart(astrodata: AstroData, house_system: str = 'whole_sign', s
     _plot_chart(houses, 'Navamsa Chart (D9)', 'Marriage & Partnerships', show_retro=show_retro)
     return houses
 
-
 def plot_hora_chart(astrodata: AstroData, house_system: str = 'whole_sign', show_retro: bool = False) -> list[House]:
-    """Plot D2 (Hora): Prosperity & Wealth."""
+    """Plot D2 (Hora): Corrected with +2 offset."""
     raw = astrodata.get_rashi_data()
-    raw2 = {k: {'sign_num': int((v['lon']*2)%360/30)+1, 'lon': (v['lon']*2)%360, 'retro': v.get('retro',False)} for k,v in raw.items()}
-    houses = _build_houses(raw2, house_system, astrodata)
+    
+    # Apply traditional D2 calculation
+    corrected_raw = {}
+    for k, v in raw.items():
+        if k == 'ascendant':
+            corrected_raw[k] = v
+        else:
+            new_sign, new_lon = calculate_corrected_varga(v['lon'], 2, 'D2')
+            corrected_raw[k] = {
+                'sign_num': new_sign,
+                'lon': new_lon,
+                'retro': v.get('retro', False)
+            }
+    
+    # Apply +2 house offset
+    corrected_raw = apply_house_offset(corrected_raw, 2)
+    houses = _build_houses(corrected_raw, house_system, astrodata)
     _plot_chart(houses, 'Hora Chart (D2)', 'Prosperity & Wealth', show_retro=show_retro)
     return houses
 
-
 def plot_drekkana_chart(astrodata: AstroData, house_system: str = 'whole_sign', show_retro: bool = False) -> list[House]:
-    """Plot D3 (Drekkana): Siblings & Courage."""
+    """Plot D3 (Drekkana): Corrected with +6 offset."""
     raw = astrodata.get_rashi_data()
-    raw3 = {k: {'sign_num': int((v['lon']*3)%360/30)+1, 'lon': (v['lon']*3)%360, 'retro': v.get('retro',False)} for k,v in raw.items()}
-    houses = _build_houses(raw3, house_system, astrodata)
+    
+    corrected_raw = {}
+    for k, v in raw.items():
+        if k == 'ascendant':
+            corrected_raw[k] = v
+        else:
+            new_sign, new_lon = calculate_corrected_varga(v['lon'], 3, 'D3')
+            corrected_raw[k] = {
+                'sign_num': new_sign,
+                'lon': new_lon,
+                'retro': v.get('retro', False)
+            }
+    
+    # Apply +6 house offset
+    corrected_raw = apply_house_offset(corrected_raw, 6)
+    houses = _build_houses(corrected_raw, house_system, astrodata)
     _plot_chart(houses, 'Drekkana Chart (D3)', 'Siblings & well-being', show_retro=show_retro)
     return houses
+
+
+# def plot_hora_chart(astrodata: AstroData, house_system: str = 'whole_sign', show_retro: bool = False) -> list[House]:
+#     """Plot D2 (Hora): Prosperity & Wealth."""
+#     raw = astrodata.get_rashi_data()
+#     raw2 = {k: {'sign_num': int((v['lon']*2)%360/30)+1, 'lon': (v['lon']*2)%360, 'retro': v.get('retro',False)} for k,v in raw.items()}
+#     houses = _build_houses(raw2, house_system, astrodata)
+#     _plot_chart(houses, 'Hora Chart (D2)', 'Prosperity & Wealth', show_retro=show_retro)
+#     return houses
+
+
+# def plot_drekkana_chart(astrodata: AstroData, house_system: str = 'whole_sign', show_retro: bool = False) -> list[House]:
+#     """Plot D3 (Drekkana): Siblings & Courage."""
+#     raw = astrodata.get_rashi_data()
+#     raw3 = {k: {'sign_num': int((v['lon']*3)%360/30)+1, 'lon': (v['lon']*3)%360, 'retro': v.get('retro',False)} for k,v in raw.items()}
+#     houses = _build_houses(raw3, house_system, astrodata)
+#     _plot_chart(houses, 'Drekkana Chart (D3)', 'Siblings & well-being', show_retro=show_retro)
+#     return houses
 
 
 def plot_chaturthamsha_chart(astrodata: AstroData, house_system: str = 'whole_sign', show_retro: bool = False) -> list[House]:
@@ -350,23 +528,62 @@ def plot_navamsha_chart(astrodata: AstroData, house_system: str = 'whole_sign', 
     _plot_chart(houses, 'Navamsha Chart (D9)', 'Marriage & Partnerships', show_retro=show_retro)
     return houses
 
-
 def plot_dashamamsha_chart(astrodata: AstroData, house_system: str = 'whole_sign', show_retro: bool = False) -> list[House]:
-    """Plot D10 (Dashamamsha): Profession & Success."""
+    """Plot D10 (Dashamamsha): Corrected."""
     raw = astrodata.get_rashi_data()
-    raw10 = {k: {'sign_num': int((v['lon']*10)%360/30)+1, 'lon': (v['lon']*10)%360, 'retro': v.get('retro',False)} for k,v in raw.items()}
-    houses = _build_houses(raw10, house_system, astrodata)
+    
+    corrected_raw = {}
+    for k, v in raw.items():
+        if k == 'ascendant':
+            corrected_raw[k] = v
+        else:
+            new_sign, new_lon = calculate_corrected_varga(v['lon'], 10, 'D10')
+            corrected_raw[k] = {
+                'sign_num': new_sign,
+                'lon': new_lon,
+                'retro': v.get('retro', False)
+            }
+    
+    houses = _build_houses(corrected_raw, house_system, astrodata)
     _plot_chart(houses, 'Dashamamsha Chart (D10)', 'Profession & Social Status', show_retro=show_retro)
     return houses
 
-
 def plot_dwadashamsha_chart(astrodata: AstroData, house_system: str = 'whole_sign', show_retro: bool = False) -> list[House]:
-    """Plot D12 (Dwadashamsha): Parents & Heritage."""
+    """Plot D12 (Dwadashamsha): Corrected."""
     raw = astrodata.get_rashi_data()
-    raw12 = {k: {'sign_num': int((v['lon']*12)%360/30)+1, 'lon': (v['lon']*12)%360, 'retro': v.get('retro',False)} for k,v in raw.items()}
-    houses = _build_houses(raw12, house_system, astrodata)
+    
+    corrected_raw = {}
+    for k, v in raw.items():
+        if k == 'ascendant':
+            corrected_raw[k] = v
+        else:
+            new_sign, new_lon = calculate_corrected_varga(v['lon'], 12, 'D12')
+            corrected_raw[k] = {
+                'sign_num': new_sign,
+                'lon': new_lon,
+                'retro': v.get('retro', False)
+            }
+    
+    houses = _build_houses(corrected_raw, house_system, astrodata)
     _plot_chart(houses, 'Dwadashamsha Chart (D12)', 'Parents & Ancestry', show_retro=show_retro)
     return houses
+
+# def plot_dashamamsha_chart(astrodata: AstroData, house_system: str = 'whole_sign', show_retro: bool = False) -> list[House]:
+#     """Plot D10 (Dashamamsha): Profession & Success."""
+#     raw = astrodata.get_rashi_data()
+#     raw10 = {k: {'sign_num': int((v['lon']*10)%360/30)+1, 'lon': (v['lon']*10)%360, 'retro': v.get('retro',False)} for k,v in raw.items()}
+#     houses = _build_houses(raw10, house_system, astrodata)
+#     _plot_chart(houses, 'Dashamamsha Chart (D10)', 'Profession & Social Status', show_retro=show_retro)
+#     return houses
+
+
+# def plot_dwadashamsha_chart(astrodata: AstroData, house_system: str = 'whole_sign', show_retro: bool = False) -> list[House]:
+#     """Plot D12 (Dwadashamsha): Parents & Heritage."""
+#     raw = astrodata.get_rashi_data()
+#     raw12 = {k: {'sign_num': int((v['lon']*12)%360/30)+1, 'lon': (v['lon']*12)%360, 'retro': v.get('retro',False)} for k,v in raw.items()}
+#     houses = _build_houses(raw12, house_system, astrodata)
+#     _plot_chart(houses, 'Dwadashamsha Chart (D12)', 'Parents & Ancestry', show_retro=show_retro)
+#     return houses
 
 
 def plot_shodashamsha_chart(astrodata: AstroData, house_system: str = 'whole_sign', show_retro: bool = False) -> list[House]:
@@ -386,61 +603,184 @@ def plot_vimshamsha_chart(astrodata: AstroData, house_system: str = 'whole_sign'
     _plot_chart(houses, 'Vimshamsha Chart (D20)', 'Spiritual Pursuits', show_retro=show_retro)
     return houses
 
-
 def plot_chatuvimshamsha_chart(astrodata: AstroData, house_system: str = 'whole_sign', show_retro: bool = False) -> list[House]:
-    """Plot D24 (Chatuvimshamsha): Education & Learning."""
+    """Plot D24 (Chatuvimshamsha): Corrected."""
     raw = astrodata.get_rashi_data()
-    raw24 = {k: {'sign_num': int((v['lon']*24)%360/30)+1, 'lon': (v['lon']*24)%360, 'retro': v.get('retro',False)} for k,v in raw.items()}
-    houses = _build_houses(raw24, house_system, astrodata)
+    
+    corrected_raw = {}
+    for k, v in raw.items():
+        if k == 'ascendant':
+            corrected_raw[k] = v
+        else:
+            new_sign, new_lon = calculate_corrected_varga(v['lon'], 24, 'D24')
+            corrected_raw[k] = {
+                'sign_num': new_sign,
+                'lon': new_lon,
+                'retro': v.get('retro', False)
+            }
+    
+    houses = _build_houses(corrected_raw, house_system, astrodata)
     _plot_chart(houses, 'Chatuvimshamsha Chart (D24)', 'Education & Intellect', show_retro=show_retro)
     return houses
 
-
 def plot_saptvimshamsha_chart(astrodata: AstroData, house_system: str = 'whole_sign', show_retro: bool = False) -> list[House]:
-    """Plot D27 (Saptvimshamsha): Strengths & Weaknesses."""
+    """Plot D27 (Saptvimshamsha): Corrected with +1 offset."""
     raw = astrodata.get_rashi_data()
-    raw27 = {k: {'sign_num': int((v['lon']*27)%360/30)+1, 'lon': (v['lon']*27)%360, 'retro': v.get('retro',False)} for k,v in raw.items()}
-    houses = _build_houses(raw27, house_system, astrodata)
+    
+    corrected_raw = {}
+    for k, v in raw.items():
+        if k == 'ascendant':
+            corrected_raw[k] = v
+        else:
+            new_sign, new_lon = calculate_corrected_varga(v['lon'], 27, 'D27')
+            corrected_raw[k] = {
+                'sign_num': new_sign,
+                'lon': new_lon,
+                'retro': v.get('retro', False)
+            }
+    
+    # Apply +1 house offset
+    corrected_raw = apply_house_offset(corrected_raw, 1)
+    houses = _build_houses(corrected_raw, house_system, astrodata)
     _plot_chart(houses, 'Saptvimshamsha Chart (D27)', 'Innate Strengths & Challenges', show_retro=show_retro)
     return houses
 
-
 def plot_trishamsha_chart(astrodata: AstroData, house_system: str = 'whole_sign', show_retro: bool = False) -> list[House]:
-    """Plot D30 (Trishamsha): Miseries & Troubles."""
+    """Plot D30 (Trishamsha): Corrected."""
     raw = astrodata.get_rashi_data()
-    raw30 = {k: {'sign_num': int((v['lon']*30)%360/30)+1, 'lon': (v['lon']*30)%360, 'retro': v.get('retro',False)} for k,v in raw.items()}
-    houses = _build_houses(raw30, house_system, astrodata)
+    
+    corrected_raw = {}
+    for k, v in raw.items():
+        if k == 'ascendant':
+            corrected_raw[k] = v
+        else:
+            new_sign, new_lon = calculate_corrected_varga(v['lon'], 30, 'D30')
+            corrected_raw[k] = {
+                'sign_num': new_sign,
+                'lon': new_lon,
+                'retro': v.get('retro', False)
+            }
+    
+    houses = _build_houses(corrected_raw, house_system, astrodata)
     _plot_chart(houses, 'Trishamsha Chart (D30)', 'Miseries & Disasters', show_retro=show_retro)
     return houses
 
-
 def plot_khavedamsha_chart(astrodata: AstroData, house_system: str = 'whole_sign', show_retro: bool = False) -> list[House]:
-    """Plot D40 (Khavedamsha): Auspicious/Inauspicious Events."""
+    """Plot D40 (Khavedamsha): Corrected with +1 offset."""
     raw = astrodata.get_rashi_data()
-    raw40 = {k: {'sign_num': int((v['lon']*40)%360/30)+1, 'lon': (v['lon']*40)%360, 'retro': v.get('retro',False)} for k,v in raw.items()}
-    houses = _build_houses(raw40, house_system, astrodata)
+    
+    corrected_raw = {}
+    for k, v in raw.items():
+        if k == 'ascendant':
+            corrected_raw[k] = v
+        else:
+            new_sign, new_lon = calculate_corrected_varga(v['lon'], 40, 'D40')
+            corrected_raw[k] = {
+                'sign_num': new_sign,
+                'lon': new_lon,
+                'retro': v.get('retro', False)
+            }
+    
+    # Apply +1 house offset
+    corrected_raw = apply_house_offset(corrected_raw, 1)
+    houses = _build_houses(corrected_raw, house_system, astrodata)
     _plot_chart(houses, 'Khavedamsha Chart (D40)', 'Major Life Events', show_retro=show_retro)
     return houses
 
-
 def plot_akshavedamsha_chart(astrodata: AstroData, house_system: str = 'whole_sign', show_retro: bool = False) -> list[House]:
-    """Plot D45 (Akshavedamsha): Overall Character."""
+    """Plot D45 (Akshavedamsha): Corrected."""
     raw = astrodata.get_rashi_data()
-    raw45 = {k: {'sign_num': int((v['lon']*45)%360/30)+1, 'lon': (v['lon']*45)%360, 'retro': v.get('retro',False)} for k,v in raw.items()}
-    houses = _build_houses(raw45, house_system, astrodata)
+    
+    corrected_raw = {}
+    for k, v in raw.items():
+        if k == 'ascendant':
+            corrected_raw[k] = v
+        else:
+            new_sign, new_lon = calculate_corrected_varga(v['lon'], 45, 'D45')
+            corrected_raw[k] = {
+                'sign_num': new_sign,
+                'lon': new_lon,
+                'retro': v.get('retro', False)
+            }
+    
+    houses = _build_houses(corrected_raw, house_system, astrodata)
     _plot_chart(houses, 'Akshavedamsha Chart (D45)', 'General Conduct & Life Themes', show_retro=show_retro)
     return houses
 
-
 def plot_shashtiamsha_chart(astrodata: AstroData, house_system: str = 'whole_sign', show_retro: bool = False) -> list[House]:
-    """Plot D60 (Shashtiamsha): Karma & Destiny."""
+    """Plot D60 (Shashtiamsha): Corrected."""
     raw = astrodata.get_rashi_data()
-    raw60 = {k: {'sign_num': int((v['lon']*60)%360/30)+1, 'lon': (v['lon']*60)%360, 'retro': v.get('retro',False)} for k,v in raw.items()}
-    houses = _build_houses(raw60, house_system, astrodata)
+    
+    corrected_raw = {}
+    for k, v in raw.items():
+        if k == 'ascendant':
+            corrected_raw[k] = v
+        else:
+            new_sign, new_lon = calculate_corrected_varga(v['lon'], 60, 'D60')
+            corrected_raw[k] = {
+                'sign_num': new_sign,
+                'lon': new_lon,
+                'retro': v.get('retro', False)
+            }
+    
+    houses = _build_houses(corrected_raw, house_system, astrodata)
     _plot_chart(houses, 'Shashtiamsha Chart (D60)', 'Past-life Karma & Destiny', show_retro=show_retro)
     return houses
 
-from .dispositions import _anticlockwise_house
+
+# def plot_chatuvimshamsha_chart(astrodata: AstroData, house_system: str = 'whole_sign', show_retro: bool = False) -> list[House]:
+#     """Plot D24 (Chatuvimshamsha): Education & Learning."""
+#     raw = astrodata.get_rashi_data()
+#     raw24 = {k: {'sign_num': int((v['lon']*24)%360/30)+1, 'lon': (v['lon']*24)%360, 'retro': v.get('retro',False)} for k,v in raw.items()}
+#     houses = _build_houses(raw24, house_system, astrodata)
+#     _plot_chart(houses, 'Chatuvimshamsha Chart (D24)', 'Education & Intellect', show_retro=show_retro)
+#     return houses
+
+
+# def plot_saptvimshamsha_chart(astrodata: AstroData, house_system: str = 'whole_sign', show_retro: bool = False) -> list[House]:
+#     """Plot D27 (Saptvimshamsha): Strengths & Weaknesses."""
+#     raw = astrodata.get_rashi_data()
+#     raw27 = {k: {'sign_num': int((v['lon']*27)%360/30)+1, 'lon': (v['lon']*27)%360, 'retro': v.get('retro',False)} for k,v in raw.items()}
+#     houses = _build_houses(raw27, house_system, astrodata)
+#     _plot_chart(houses, 'Saptvimshamsha Chart (D27)', 'Innate Strengths & Challenges', show_retro=show_retro)
+#     return houses
+
+
+# def plot_trishamsha_chart(astrodata: AstroData, house_system: str = 'whole_sign', show_retro: bool = False) -> list[House]:
+#     """Plot D30 (Trishamsha): Miseries & Troubles."""
+#     raw = astrodata.get_rashi_data()
+#     raw30 = {k: {'sign_num': int((v['lon']*30)%360/30)+1, 'lon': (v['lon']*30)%360, 'retro': v.get('retro',False)} for k,v in raw.items()}
+#     houses = _build_houses(raw30, house_system, astrodata)
+#     _plot_chart(houses, 'Trishamsha Chart (D30)', 'Miseries & Disasters', show_retro=show_retro)
+#     return houses
+
+
+# def plot_khavedamsha_chart(astrodata: AstroData, house_system: str = 'whole_sign', show_retro: bool = False) -> list[House]:
+#     """Plot D40 (Khavedamsha): Auspicious/Inauspicious Events."""
+#     raw = astrodata.get_rashi_data()
+#     raw40 = {k: {'sign_num': int((v['lon']*40)%360/30)+1, 'lon': (v['lon']*40)%360, 'retro': v.get('retro',False)} for k,v in raw.items()}
+#     houses = _build_houses(raw40, house_system, astrodata)
+#     _plot_chart(houses, 'Khavedamsha Chart (D40)', 'Major Life Events', show_retro=show_retro)
+#     return houses
+
+
+# def plot_akshavedamsha_chart(astrodata: AstroData, house_system: str = 'whole_sign', show_retro: bool = False) -> list[House]:
+#     """Plot D45 (Akshavedamsha): Overall Character."""
+#     raw = astrodata.get_rashi_data()
+#     raw45 = {k: {'sign_num': int((v['lon']*45)%360/30)+1, 'lon': (v['lon']*45)%360, 'retro': v.get('retro',False)} for k,v in raw.items()}
+#     houses = _build_houses(raw45, house_system, astrodata)
+#     _plot_chart(houses, 'Akshavedamsha Chart (D45)', 'General Conduct & Life Themes', show_retro=show_retro)
+#     return houses
+
+
+# def plot_shashtiamsha_chart(astrodata: AstroData, house_system: str = 'whole_sign', show_retro: bool = False) -> list[House]:
+#     """Plot D60 (Shashtiamsha): Karma & Destiny."""
+#     raw = astrodata.get_rashi_data()
+#     raw60 = {k: {'sign_num': int((v['lon']*60)%360/30)+1, 'lon': (v['lon']*60)%360, 'retro': v.get('retro',False)} for k,v in raw.items()}
+#     houses = _build_houses(raw60, house_system, astrodata)
+#     _plot_chart(houses, 'Shashtiamsha Chart (D60)', 'Past-life Karma & Destiny', show_retro=show_retro)
+#     return houses
+
 
 def plot_comprehensive_chart(
     astrodata: AstroData,
