@@ -3,10 +3,8 @@
 </p>
 
 # astrokundali
-- version = "0.1.2"
-- description = "Flexible astrokundali package with Different house calculation methods and interpretation JSONs"
-- authors = name="Mirjan Ali Sha"
-- requires-python = ">=3.7"
+**AstroKundali** is a lightweight and modular Python library for generating Vedic astrology charts using Swiss Ephemeris. It supports traditional North Indian chart plotting, divisional charts (D1 to D60), planetary dispositions, drishti (aspect) logic, and advanced calculations like Ashtakavarga. Designed for flexibility and clarity, it enables both astrologers and developers to compute and visualize personalized Kundalis with precision.
+
 
 **Request:**
 If anyone would like to collaborate or discuss new features, please send me an email. I will get in touch with you.<br>
