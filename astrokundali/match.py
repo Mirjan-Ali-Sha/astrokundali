@@ -1,42 +1,55 @@
 """
-astrokundali/match.py - Enhanced Version
+astrokundali/match.py
 
-Enhanced Ashtakoota (Guna Milan) marriage matching with:
-- Complete 14-animal Yoni compatibility matrix  
-- Comprehensive Graha Maitri scoring (0, 0.5, 1, 3, 4, 5)
-- Enhanced Bhakoot dosha cancellation rules
-- Improved Nadi dosha cancellation with Pada logic
-- Advanced dosha cancellation system
-- Weighted compatibility calculation
-- Comprehensive risk assessment
-- Detailed interpretations
+Secular Ashtakoota (Guna Milan) marriage matching module.
+Features:
+- Secular approach without religious remedies
+- Angshik & Purna Manglik dosha classification
+- Chandra Manglik Dosha with severity levels
+- Complete 14-animal Yoni compatibility matrix
+- Enhanced Graha Maitri scoring (0, 0.5, 1, 3, 4, 5)
+- Advanced dosha cancellation rules
+- Weighted compatibility & risk assessment
+- Behavioral and practical remedies only
+- Constructive interpretations based on psychology
 """
 
-import swisseph as swe
+import json
+import os
+from typing import Dict, List, Any, Tuple
+from dataclasses import dataclass
 from .astro_data import AstroData
 from .dispositions import get_dispositions
-import json, codecs
-from pathlib import Path
+
+# Load secular constructive remedies from JSON
+def load_constructive_remedies():
+    """Load secular constructive remedies from JSON file"""
+    try:
+        json_path = os.path.join(os.path.dirname(__file__), 'data', 'cons_rem_marriage.json')
+        with open(json_path, 'r', encoding='utf-8') as f:
+            return json.load(f)
+    except FileNotFoundError:
+        print("Warning: cons_rem_marriage.json not found. Using default remedies.")
+        return {}
+
+CONSTRUCTIVE_REMEDIES = load_constructive_remedies()
 
 # Enhanced mappings with complete data
-VARNA_MAP = {1:3,2:2,3:1,4:3,5:4,6:2,7:1,8:3,9:4,10:2,11:1,12:4}
-VARNA_NAME = {1:'Brahmin',2:'Kshatriya',3:'Vaishya',4:'Shudra'}
+VARNA_MAP = {1:3, 2:2, 3:1, 4:3, 5:4, 6:2, 7:1, 8:3, 9:4, 10:2, 11:1, 12:4}
+VARNA_NAME = {1:'Brahmin', 2:'Kshatriya', 3:'Vaishya', 4:'Shudra'}
 
 VASHA_MAP = {
-    1:'Chatushpada',2:'Manav',3:'Jalachara',4:'Jalachara',
-    5:'Chatushpada',6:'Manav',7:'Manav',8:'Vanachara',
-    9:'Manav',10:'Chatushpada',11:'Chatushpada',12:'Jalachara'
+    1:'Chatushpada', 2:'Manav', 3:'Jalachara', 4:'Jalachara',
+    5:'Chatushpada', 6:'Manav', 7:'Manav', 8:'Vanachara',
+    9:'Manav', 10:'Chatushpada', 11:'Chatushpada', 12:'Jalachara'
 }
 
-# Enhanced Gana groups with complete mapping
+# Complete Gana groups mapping
 GANA_GROUPS = {
-    # Deva Gana (Divine nature)
     1:'Deva', 5:'Deva', 7:'Deva', 8:'Deva', 13:'Deva', 15:'Deva', 
     17:'Deva', 22:'Deva', 27:'Deva',
-    # Manushya Gana (Human nature)  
     2:'Manushya', 4:'Manushya', 6:'Manushya', 12:'Manushya', 20:'Manushya', 
     21:'Manushya', 25:'Manushya', 26:'Manushya',
-    # Rakshasa Gana (Demonic nature)
     3:'Rakshasa', 9:'Rakshasa', 10:'Rakshasa', 11:'Rakshasa', 14:'Rakshasa', 
     16:'Rakshasa', 18:'Rakshasa', 19:'Rakshasa', 23:'Rakshasa', 24:'Rakshasa'
 }
@@ -44,23 +57,20 @@ GANA_GROUPS = {
 # Complete 14-animal Yoni mapping
 YONI_MAP = {
     1:'Horse', 2:'Elephant', 3:'Sheep', 4:'Snake', 5:'Snake', 6:'Dog',
-    7:'Cat', 8:'Rat', 9:'Cow', 10:'Buffalo', 11:'Tiger', 12:'Deer',
-    13:'Monkey', 14:'Lion', 15:'Mongoose', 16:'Tiger', 17:'Deer', 18:'Dog',
-    19:'Elephant', 20:'Horse', 21:'Dog', 22:'Horse', 23:'Sheep', 24:'Rat',
-    25:'Deer', 26:'Rat', 27:'Elephant'
+    7:'Cat', 8:'Sheep', 9:'Cat', 10:'Rat', 11:'Rat', 12:'Cow', 
+    13:'Buffalo', 14:'Tiger', 15:'Buffalo', 16:'Tiger', 17:'Deer', 18:'Deer',
+    19:'Dog', 20:'Monkey', 21:'Mongoose', 22:'Monkey', 23:'Lion', 24:'Horse',
+    25:'Lion', 26:'Cow', 27:'Elephant'
 }
 
-# Enhanced Nadi mapping with complete classification
+# Enhanced Nadi mapping
 NADI_MAP = {
-    # Adi Nadi (Vata - Air element)
-    1:'Adi', 6:'Adi', 12:'Adi', 13:'Adi', 19:'Adi', 7:'Adi', 18:'Adi', 25:'Adi', 24:'Adi',
-    # Madhya Nadi (Pitta - Fire element)
-    2:'Madhya', 8:'Madhya', 5:'Madhya', 14:'Madhya', 11:'Madhya', 20:'Madhya', 17:'Madhya', 26:'Madhya', 23:'Madhya',
-    # Antya Nadi (Kapha - Water element)
-    4:'Antya', 9:'Antya', 3:'Antya', 10:'Antya', 15:'Antya', 16:'Antya', 21:'Antya', 22:'Antya', 27:'Antya'
+    1:'Adi', 6:'Adi', 7:'Adi', 12:'Adi', 13:'Adi', 18:'Adi', 19:'Adi', 24:'Adi', 25:'Adi',
+    2:'Madhya', 5:'Madhya', 8:'Madhya', 11:'Madhya', 14:'Madhya', 17:'Madhya', 20:'Madhya', 23:'Madhya', 26:'Madhya',
+    3:'Antya', 4:'Antya', 9:'Antya', 10:'Antya', 15:'Antya', 16:'Antya', 21:'Antya', 22:'Antya', 27:'Antya'
 }
 
-# Enhanced Koota information with detailed descriptions
+# Enhanced Koota information
 KOOTA_INFO = {
     'Varna': {'max':1, 'desc':'Spiritual Development & Social Compatibility'},
     'Vashya': {'max':2, 'desc':'Mutual Control & Dominance Balance'},
@@ -72,26 +82,56 @@ KOOTA_INFO = {
     'Nadi': {'max':8, 'desc':'Genetic & Health Harmony'}
 }
 
-# Enhanced remedies with specific actions
-REMINDERS = {
-    'Varna': ['Navagraha Shanti Puja', 'Recite Gayatri Mantra daily', 'Donate to Brahmins'],
-    'Vashya': ['Donate sweets on Wednesdays', 'Wear Cat\'s Eye gemstone', 'Chant Budha Mantra'],
-    'Tara': ['Tara Dosha Havan', 'Visit Tara Devi Temple', 'Perform Nakshatra Puja'],
-    'Yoni': ['Chant Maha Mrityunjaya Mantra', 'Perform Graha Shanti Puja', 'Wear appropriate gemstones'],
-    'Gana': ['Gan Dosh Nivaran Puja', 'Chant Jupiter Mantra', 'Donate yellow items'],
-    'Bhakoot': ['Bhakoot Dosha Shanti Puja', 'Charity of white foods', 'Perform Rudrabhishek'],
-    'Graha Maitri': ['Graha Maitri Shanti Havan', 'Wear Pearl & Yellow Sapphire', 'Chant planetary mantras'],
-    'Nadi': ['Nadi Dosha Havan', 'Pilgrimage to Saptashrungi', 'Perform Maha Mrityunjaya Jaap'],
-    'Manglik': ['Mangal Dosha Puja at Mangalnath Temple', 'Kumbh Vivah ritual', 'Plant Neem tree for 42 days', 'Donate red items on Tuesdays', 'Wear Red Coral after consultation']
+# Secular remedies (no religious content)
+SECULAR_REMEDIES = {
+    'Varna': [
+        'Practice mutual respect for different social backgrounds',
+        'Engage in educational activities together',
+        'Focus on personal character development'
+    ],
+    'Vashya': [
+        'Develop balanced decision-making skills',
+        'Practice healthy communication techniques',
+        'Learn conflict resolution strategies'
+    ],
+    'Tara': [
+        'Maintain healthy lifestyle habits together',
+        'Practice stress management techniques',
+        'Focus on preventive healthcare'
+    ],
+    'Yoni': [
+        'Improve emotional and physical communication',
+        'Practice patience and understanding',
+        'Focus on emotional bonding activities'
+    ],
+    'Gana': [
+        'Learn anger management techniques',
+        'Practice empathy and understanding',
+        'Develop conflict de-escalation skills'
+    ],
+    'Bhakoot': [
+        'Practice transparent financial communication',
+        'Develop emotional regulation skills',
+        'Focus on partnership building'
+    ],
+    'Graha Maitri': [
+        'Practice active listening skills',
+        'Develop emotional intelligence',
+        'Create shared interests and activities'
+    ],
+    'Nadi': [
+        'Focus on healthy lifestyle practices',
+        'Maintain open health communication',
+        'Seek proper medical guidance when needed'
+    ],
+    'Manglik': [
+        'Practice anger management techniques',
+        'Learn constructive conflict resolution',
+        'Focus on patience and understanding'
+    ]
 }
 
-# Enhanced remedies with constructive approaches
-# Load constructive remedies from JSON
-DATA_DIR = Path(__file__).parent / 'data'
-CONSTRUCTIVE_REMEDIES = json.load(open(DATA_DIR / 'cons_rem_marriage.json'))
-# CONSTRUCTIVE_REMEDIES =
-
-# Complete planetary friendship matrix
+# Planetary friendship matrix
 FRIENDSHIP = {
     'sun': {'friends': ['moon','mars','jupiter'], 'enemies': ['venus','saturn'], 'neutral': ['mercury']},
     'moon': {'friends': ['sun','mercury'], 'enemies': [], 'neutral': ['mars','jupiter','venus','saturn']},
@@ -104,27 +144,32 @@ FRIENDSHIP = {
     'ketu': {'friends': ['mars','jupiter'], 'enemies': ['moon','venus'], 'neutral': ['sun','mercury','saturn']}
 }
 
-# Enhanced scoring functions
+@dataclass
+class MatchResult:
+    """Data class for match result"""
+    koota_name: str
+    boy_type: str
+    girl_type: str
+    obtained: float
+    maximum: float
+    significance: str
 
-def varna_koota(m1, m2):
-    """Enhanced Varna Koota with detailed scoring"""
+def varna_koota(m1: Dict, m2: Dict) -> float:
+    """Calculate Varna Koota (Max: 1)"""
     boy_varna = VARNA_MAP[m1['sign_number']]
     girl_varna = VARNA_MAP[m2['sign_number']]
     
     # Boy's varna should be equal or higher than girl's
-    if boy_varna >= girl_varna:
-        return 1
-    return 0
+    return 1 if boy_varna >= girl_varna else 0
 
-def vashya_koota(m1, m2):
-    """Enhanced Vashya with complete compatibility matrix"""
+def vashya_koota(m1: Dict, m2: Dict) -> float:
+    """Calculate Vashya Koota (Max: 2) with enhanced scoring"""
     vashya_scores = {
         # Same group = 2 points
         ("Chatushpada", "Chatushpada"): 2,
         ("Manav", "Manav"): 2,
         ("Jalachara", "Jalachara"): 2,
         ("Vanachara", "Vanachara"): 2,
-        ("Keeta", "Keeta"): 2,
         
         # Compatible groups = 1.5 points
         ("Chatushpada", "Manav"): 1.5,
@@ -148,13 +193,13 @@ def vashya_koota(m1, m2):
     
     return vashya_scores.get((boy_vashya, girl_vashya), 0)
 
-def tara_koota(m1, m2):
+def tara_koota(m1: Dict, m2: Dict) -> float:
     """Calculate Tara Koota (Max: 3) - CORRECTED VERSION"""
     n1, n2 = m1['nakshatra'], m2['nakshatra']
     
     # Calculate remainders
-    r1 = (n2 - n1) % 9  # Bride to groom
-    r2 = (n1 - n2) % 9  # Groom to bride
+    r1 = (n2 - n1) % 9
+    r2 = (n1 - n2) % 9
     
     # Convert 0 to even for logic
     r1 = r1 if r1 else 0
@@ -170,9 +215,8 @@ def tara_koota(m1, m2):
     else:
         return 0      # Both odd
 
-def yoni_koota(m1, m2):
+def yoni_koota(m1: Dict, m2: Dict) -> float:
     """Complete 14-animal Yoni compatibility matrix"""
-    # Research-based complete compatibility matrix
     yoni_scores = {
         # Same yoni = 4 points
         ("Horse", "Horse"): 4, ("Elephant", "Elephant"): 4, ("Sheep", "Sheep"): 4,
@@ -190,7 +234,7 @@ def yoni_koota(m1, m2):
         ("Rat", "Buffalo"): 3, ("Buffalo", "Rat"): 3,
         ("Monkey", "Lion"): 3, ("Lion", "Monkey"): 3,
         
-        # Neutral yonis = 2 points (default for unlisted combinations)
+        # Neutral yonis = 2 points
         ("Horse", "Sheep"): 2, ("Sheep", "Horse"): 2,
         ("Horse", "Dog"): 2, ("Dog", "Horse"): 2,
         ("Elephant", "Buffalo"): 2, ("Buffalo", "Elephant"): 2,
@@ -221,18 +265,16 @@ def yoni_koota(m1, m2):
     boy_yoni = YONI_MAP[m1['nakshatra']]
     girl_yoni = YONI_MAP[m2['nakshatra']]
     
-    return yoni_scores.get((boy_yoni, girl_yoni), 2)  # Default to neutral
+    return yoni_scores.get((boy_yoni, girl_yoni), 2)
 
-def graha_maitri_koota(m1, m2):
+def graha_maitri_koota(m1: Dict, m2: Dict) -> float:
     """Enhanced Graha Maitri with complete scoring (0, 0.5, 1, 3, 4, 5)"""
     boy_lord = m1['sign_lord']
     girl_lord = m2['sign_lord']
     
-    # Same lord = 5 points
     if boy_lord == girl_lord:
         return 5
     
-    # Get relationship data
     boy_relations = FRIENDSHIP.get(boy_lord, {})
     girl_relations = FRIENDSHIP.get(girl_lord, {})
     
@@ -265,24 +307,24 @@ def graha_maitri_koota(m1, m2):
     else:  # Both enemies
         return 0
 
-def gana_koota(m1, m2):
-    """Enhanced Gana Koota with complete scoring"""
+def gana_koota(m1: Dict, m2: Dict) -> float:
+    """Calculate Gana Koota (Max: 6)"""
     boy_gana = GANA_GROUPS[m1['nakshatra']]
     girl_gana = GANA_GROUPS[m2['nakshatra']]
     
     if boy_gana == girl_gana:
-        return 6  # Same gana
+        return 6
     elif (boy_gana == "Deva" and girl_gana == "Manushya") or \
          (boy_gana == "Manushya" and girl_gana == "Deva"):
-        return 5  # Deva-Manushya compatible
+        return 5
     elif (boy_gana == "Manushya" and girl_gana == "Rakshasa") or \
          (boy_gana == "Rakshasa" and girl_gana == "Manushya"):
-        return 1  # Manushya-Rakshasa partially compatible
-    else:  # Deva-Rakshasa incompatible
+        return 1
+    else:  # Deva-Rakshasa
         return 0
 
-def bhakoot_koota(m1, m2):
-    """Enhanced Bhakoot Koota with exception handling"""
+def bhakoot_koota(m1: Dict, m2: Dict) -> float:
+    """Calculate Bhakoot Koota (Max: 7)"""
     boy_rashi = m1['sign_number']
     girl_rashi = m2['sign_number']
     
@@ -302,36 +344,40 @@ def bhakoot_koota(m1, m2):
     ]
     
     if (diff_boy_to_girl, diff_girl_to_boy) in dosha_combinations:
-        return 0  # Dosha present
+        return 0
     else:
-        return 7  # No dosha
+        return 7
 
-def nadi_koota(m1, m2):
-    """Enhanced Nadi Koota with proper classification"""
+def nadi_koota(m1: Dict, m2: Dict) -> float:
+    """Calculate Nadi Koota (Max: 8)"""
     boy_nadi = NADI_MAP[m1['nakshatra']]
     girl_nadi = NADI_MAP[m2['nakshatra']]
     
     if boy_nadi != girl_nadi:
-        return 8  # Different nadis - good
+        return 8
     else:
-        return 0  # Same nadi - dosha
+        return 0
 
-def manglik_dosha(data: AstroData) -> bool:
-    """Enhanced Manglik calculation with proper house system"""
+def manglik_dosha(data: AstroData) -> str:
+    """
+    Enhanced Manglik classification
+    Returns: 'None', 'Anshik' (partial), or 'Purna' (complete)
+    """
     raw = data.get_rashi_data()
     asc = raw['ascendant']['lon'] % 360
     mars = raw['mars']['lon'] % 360
-    
-    # Calculate house position
     house = int(((mars - asc) % 360) // 30) + 1
     
-    # Standard Manglik houses
-    return house in (1, 2, 4, 7, 8, 12)
+    if house in {7, 8}:
+        return 'Purna'   # Complete Manglik
+    elif house in {1, 2, 4, 12}:
+        return 'Anshik'  # Partial Manglik
+    else:
+        return 'None'    # Non-Manglik
 
-def chandra_manglik_dosha_detailed(data: AstroData) -> dict:
+def chandra_manglik_dosha_detailed(data: AstroData) -> Dict[str, Any]:
     """
     Calculate Chandra Manglik Dosha with severity levels
-    
     Returns detailed information about the dosha including severity
     """
     raw = data.get_rashi_data()
@@ -375,72 +421,37 @@ def chandra_manglik_dosha_detailed(data: AstroData) -> dict:
             'description': 'No Chandra Manglik Dosha present'
         }
 
-
-def check_dosha_cancellations(m1: dict, m2: dict, faults: list, d1: dict, d2: dict) -> dict:
+def check_dosha_cancellations(m1: Dict, m2: Dict, faults: List[str], d1: Dict, d2: Dict) -> Dict:
     """Enhanced dosha cancellation with comprehensive rules"""
     canceled_doshas = []
     cancellation_reasons = {}
     
     # Nadi Dosha Cancellation Rules
     if 'Nadi' in faults:
-        # Same rashi cancels Nadi Dosha
         if m1.get('sign_number') == m2.get('sign_number'):
             canceled_doshas.append('Nadi')
             cancellation_reasons['Nadi'] = 'Same Rashi (Moon Sign) cancels Nadi Dosha'
-        
-        # Same nakshatra cancels Nadi Dosha
         elif m1.get('nakshatra') == m2.get('nakshatra'):
             canceled_doshas.append('Nadi')
             cancellation_reasons['Nadi'] = 'Same Nakshatra cancels Nadi Dosha'
-        
-        # Different pada in same nakshatra cancels Nadi Dosha
-        elif m1.get('nakshatra') == m2.get('nakshatra'):
-            # This would need pada calculation - simplified for now
-            canceled_doshas.append('Nadi')
-            cancellation_reasons['Nadi'] = 'Different Pada in same Nakshatra cancels Nadi Dosha'
-        
-        # Friendly sign lords cancel Nadi Dosha
         elif _are_planets_friends(m1.get('sign_lord', ''), m2.get('sign_lord', '')):
             canceled_doshas.append('Nadi')
             cancellation_reasons['Nadi'] = 'Friendly Moon sign lords cancel Nadi Dosha'
     
     # Bhakoot Dosha Cancellation Rules
     if 'Bhakoot' in faults:
-        # Same sign lord cancels Bhakoot Dosha
         if m1.get('sign_lord') == m2.get('sign_lord'):
             canceled_doshas.append('Bhakoot')
             cancellation_reasons['Bhakoot'] = 'Same sign lord cancels Bhakoot Dosha'
-        
-        # Friendly sign lords cancel Bhakoot Dosha
         elif _are_planets_friends(m1.get('sign_lord', ''), m2.get('sign_lord', '')):
             canceled_doshas.append('Bhakoot')
             cancellation_reasons['Bhakoot'] = 'Friendly sign lords cancel Bhakoot Dosha'
     
     # Gana Dosha Cancellation Rules
     if 'Gana' in faults:
-        # Same sign lord cancels Gana Dosha
         if m1.get('sign_lord') == m2.get('sign_lord'):
             canceled_doshas.append('Gana')
             cancellation_reasons['Gana'] = 'Same sign lord cancels Gana Dosha'
-    
-    # Manglik Dosha Cancellation Rules
-    if 'Manglik' in faults:
-        # Both having Mars in same houses
-        boy_mars = d1.get('mars', {})
-        girl_mars = d2.get('mars', {})
-        
-        if boy_mars.get('house_number') == girl_mars.get('house_number'):
-            canceled_doshas.append('Manglik')
-            cancellation_reasons['Manglik'] = 'Mars in same houses cancels Manglik Dosha'
-        
-        # Jupiter aspect cancellation (simplified)
-        boy_jupiter = d1.get('jupiter', {})
-        girl_jupiter = d2.get('jupiter', {})
-        
-        if _has_jupiter_aspect_on_mars(boy_mars, boy_jupiter) and \
-           _has_jupiter_aspect_on_mars(girl_mars, girl_jupiter):
-            canceled_doshas.append('Manglik')
-            cancellation_reasons['Manglik'] = 'Jupiter aspect on Mars cancels Manglik Dosha'
     
     return {
         'canceled_doshas': canceled_doshas,
@@ -448,9 +459,8 @@ def check_dosha_cancellations(m1: dict, m2: dict, faults: list, d1: dict, d2: di
         'active_doshas': [d for d in faults if d not in canceled_doshas]
     }
 
-def calculate_compatibility_percentage(scores: dict) -> dict:
+def calculate_compatibility_percentage(scores: Dict) -> Dict:
     """Enhanced weighted compatibility calculation"""
-    # Research-based importance weights
     koota_weights = {
         'Nadi': 0.25,           # Most important - health & progeny
         'Bhakoot': 0.20,        # Financial & emotional stability
@@ -462,7 +472,6 @@ def calculate_compatibility_percentage(scores: dict) -> dict:
         'Varna': 0.04           # Spiritual development
     }
     
-    # Calculate weighted score
     weighted_score = 0
     total_weight = 0
     
@@ -471,14 +480,11 @@ def calculate_compatibility_percentage(scores: dict) -> dict:
             max_score = KOOTA_INFO[koota]['max']
             normalized_score = score / max_score
             weight = koota_weights[koota]
-            
             weighted_score += normalized_score * weight
             total_weight += weight
     
-    # Calculate final percentage
     compatibility_percentage = (weighted_score / total_weight) * 100 if total_weight > 0 else 0
     
-    # Generate detailed breakdown
     koota_breakdown = []
     for koota, score in scores.items():
         if koota in koota_weights and koota in KOOTA_INFO:
@@ -495,7 +501,6 @@ def calculate_compatibility_percentage(scores: dict) -> dict:
                 'status': 'Strong' if score >= max_score * 0.8 else 'Moderate' if score >= max_score * 0.5 else 'Weak'
             })
     
-    # Sort by contribution
     koota_breakdown.sort(key=lambda x: x['contribution'], reverse=True)
     
     return {
@@ -506,8 +511,7 @@ def calculate_compatibility_percentage(scores: dict) -> dict:
         'areas_for_improvement': [k for k in koota_breakdown if k['status'] == 'Weak']
     }
 
-def assess_relationship_risks(scores: dict, boy_manglik: dict, girl_manglik: dict, 
-                            canceled_doshas: list) -> dict:
+def assess_relationship_risks(scores: Dict, boy_manglik: Dict, girl_manglik: Dict, canceled_doshas: List) -> Dict:
     """Enhanced risk assessment with cancellation consideration"""
     risks = []
     risk_mitigation = []
@@ -518,67 +522,57 @@ def assess_relationship_risks(scores: dict, boy_manglik: dict, girl_manglik: dic
     effective_manglik_risk = False if 'Manglik' in canceled_doshas else \
                            (boy_manglik.get('is_manglik', False) != girl_manglik.get('is_manglik', False))
     
-    # High-priority risks (adjusted for cancellations)
+    # High-priority risks
     if effective_nadi_score == 0:
         risks.append({
             'level': 'HIGH',
             'area': 'Health & Progeny',
-            'description': 'Same Nadi indicates potential health issues for couple and progeny',
-            'impact': 'May affect children\'s health and genetic compatibility'
+            'description': 'Same Nadi indicates potential health compatibility issues',
+            'impact': 'May affect health harmony and genetic compatibility'
         })
-        risk_mitigation.append('Perform Nadi Dosha Shanti Puja and regular health check-ups')
+        risk_mitigation.append('Focus on healthy lifestyle practices and open health communication')
     
     if effective_bhakoot_score == 0:
         risks.append({
             'level': 'HIGH',
             'area': 'Emotional & Financial Stability',
-            'description': 'Bhakoot Dosha indicates emotional conflicts and financial instability',
-            'impact': 'May cause frequent arguments and money-related stress'
+            'description': 'Bhakoot Dosha indicates emotional and financial challenges',
+            'impact': 'May cause disagreements and financial stress'
         })
-        risk_mitigation.append('Practice financial planning and conflict resolution techniques')
+        risk_mitigation.append('Practice financial planning and emotional regulation techniques')
     
     # Medium-priority risks
     if scores.get('Gana', 0) <= 1:
         risks.append({
             'level': 'MEDIUM',
             'area': 'Temperamental Compatibility',
-            'description': 'Different Ganas indicate temperamental conflicts',
+            'description': 'Different temperaments may cause conflicts',
             'impact': 'May lead to misunderstandings and personality clashes'
         })
-        risk_mitigation.append('Develop patience and understanding each other\'s perspectives')
+        risk_mitigation.append('Develop patience and understanding of different perspectives')
     
     if scores.get('Yoni', 0) <= 1:
         risks.append({
             'level': 'MEDIUM',
             'area': 'Physical & Intimate Compatibility',
-            'description': 'Low Yoni compatibility indicates physical incompatibility',
+            'description': 'Low physical compatibility indicators',
             'impact': 'May affect physical intimacy and attraction'
         })
         risk_mitigation.append('Focus on emotional bonding and open communication')
     
-    if scores.get('Graha Maitri', 0) <= 2:
-        risks.append({
-            'level': 'MEDIUM',
-            'area': 'Mental Compatibility',
-            'description': 'Low Graha Maitri indicates mental incompatibility',
-            'impact': 'May cause communication issues and different thinking patterns'
-        })
-        risk_mitigation.append('Engage in activities that promote mental bonding')
-    
-    # Manglik-related risks (adjusted for cancellations)
+    # Manglik-related risks
     if effective_manglik_risk:
         risks.append({
             'level': 'HIGH',
             'area': 'Manglik Dosha',
-            'description': 'Manglik-non-Manglik combination may cause relationship issues',
-            'impact': 'Traditional belief suggests potential health risks and marital discord'
+            'description': 'Different Manglik status may cause relationship challenges',
+            'impact': 'May lead to conflicts and misunderstandings'
         })
-        risk_mitigation.append('Perform Mangal Dosha remedies and protective rituals')
+        risk_mitigation.append('Practice anger management and conflict resolution techniques')
     
     # Calculate overall risk level
     high_risks = [r for r in risks if r['level'] == 'HIGH']
     medium_risks = [r for r in risks if r['level'] == 'MEDIUM']
-    low_risks = [r for r in risks if r['level'] == 'LOW']
     
     overall_risk_level = 'HIGH' if len(high_risks) >= 2 else 'MEDIUM' if len(high_risks) >= 1 or len(medium_risks) >= 3 else 'LOW'
     
@@ -588,24 +582,22 @@ def assess_relationship_risks(scores: dict, boy_manglik: dict, girl_manglik: dic
         'risk_breakdown': {
             'high': len(high_risks),
             'medium': len(medium_risks),
-            'low': len(low_risks)
+            'low': 0
         },
         'detailed_risks': risks,
         'mitigation_strategies': risk_mitigation,
         'risk_summary': f"Identified {len(risks)} risk areas with {overall_risk_level} overall risk level"
     }
 
-def generate_detailed_interpretation(scores: dict, total_score: float, max_total: float,
-                                   boy_manglik: dict, girl_manglik: dict, 
-                                   canceled_doshas: list) -> dict:
+def generate_detailed_interpretation(scores: Dict, total_score: float, max_total: float,
+                                   boy_manglik: Dict, girl_manglik: Dict, 
+                                   canceled_doshas: List) -> Dict:
     """Enhanced interpretation with cancellation awareness"""
-    # Adjust total score for canceled doshas
     effective_total = total_score
     for dosha in canceled_doshas:
         if dosha in KOOTA_INFO:
             effective_total += KOOTA_INFO[dosha]['max']
     
-    # Calculate effective percentage
     effective_percentage = (effective_total / max_total) * 100
     compatibility_percentage = (total_score / max_total) * 100
     
@@ -615,16 +607,16 @@ def generate_detailed_interpretation(scores: dict, total_score: float, max_total
         overall_description = "This is an exceptional match with outstanding compatibility. The canceled doshas further enhance the prospects."
     elif effective_percentage >= 70:
         overall_status = "Very Good"
-        overall_description = "This is a very good match with strong compatibility potential and favorable prospects for harmony."
+        overall_description = "This is a very good match with strong compatibility potential and favorable prospects."
     elif effective_percentage >= 55:
         overall_status = "Good"
-        overall_description = "This is a good match with acceptable compatibility that shows promise for a stable relationship."
+        overall_description = "This is a good match with acceptable compatibility showing promise for stability."
     elif effective_percentage >= 40:
         overall_status = "Fair"
-        overall_description = "This is a fair match with moderate compatibility requiring understanding and adjustments."
+        overall_description = "This is a fair match with moderate compatibility requiring understanding."
     else:
         overall_status = "Poor"
-        overall_description = "This match shows significant compatibility challenges requiring careful consideration."
+        overall_description = "This match shows significant compatibility challenges requiring consideration."
     
     # Analyze strengths and concerns
     strength_areas = []
@@ -649,41 +641,6 @@ def generate_detailed_interpretation(scores: dict, total_score: float, max_total
                 'analysis': f"Challenges in {KOOTA_INFO[koota_name]['desc']} requiring attention"
             })
     
-    # Manglik analysis
-    manglik_analysis = {
-        'boy_status': boy_manglik.get('is_manglik', False),
-        'girl_status': girl_manglik.get('is_manglik', False),
-        'compatibility': 'Compatible' if boy_manglik.get('is_manglik', False) == girl_manglik.get('is_manglik', False) else 'Incompatible',
-        'impact': 'High' if boy_manglik.get('is_manglik', False) != girl_manglik.get('is_manglik', False) else 'None',
-        'canceled': 'Manglik' in canceled_doshas
-    }
-    
-    # Generate recommendations
-    recommendations = []
-    
-    # Add recommendations for active doshas only
-    active_concerns = [item for item in concern_areas if item['koota'] not in canceled_doshas]
-    
-    for concern in active_concerns:
-        if concern['koota'] == 'Nadi':
-            recommendations.append("Perform Nadi Dosha remedies including Maha Mrityunjaya Jaap")
-        elif concern['koota'] == 'Bhakoot':
-            recommendations.append("Conduct Bhakoot Dosha Shanti Puja and protective rituals")
-        elif concern['koota'] == 'Gana':
-            recommendations.append("Practice patience and understanding due to temperamental differences")
-        elif concern['koota'] == 'Yoni':
-            recommendations.append("Focus on emotional bonding and open communication")
-    
-    if manglik_analysis['compatibility'] == 'Incompatible' and not manglik_analysis['canceled']:
-        recommendations.append("Perform Mangal Dosha remedies including protective rituals")
-    
-    # Life phase predictions
-    life_phases = {
-        'early_marriage': 'Harmonious adjustment period' if effective_total >= 22 else 'Requires extra patience and understanding',
-        'middle_period': 'Stable and prosperous phase' if effective_total >= 27 else 'May face some challenges requiring mutual support',
-        'later_years': 'Deeply bonded relationship' if effective_total >= 32 else 'Companionship with acceptance of differences'
-    }
-    
     return {
         'overall_compatibility': {
             'percentage': round(compatibility_percentage, 2),
@@ -693,12 +650,86 @@ def generate_detailed_interpretation(scores: dict, total_score: float, max_total
         },
         'strength_areas': strength_areas,
         'concern_areas': concern_areas,
-        'manglik_analysis': manglik_analysis,
-        'recommendations': recommendations,
-        'life_phases': life_phases,
+        'recommendations': [],
         'cancellation_impact': len(canceled_doshas),
         'detailed_summary': f"With {int(total_score)} out of {max_total} points (effective: {int(effective_total)}), this match shows {overall_status.lower()} compatibility. {overall_description}"
     }
+
+def generate_constructive_interpretation(scores: Dict, faults: List, canceled_doshas: List,
+                                       compatibility_percentage: float) -> str:
+    """Generate secular interpretation focusing on behavioral and practical guidance"""
+    
+    interpretation = f"**Compatibility Analysis: {compatibility_percentage:.1f}%**\n\n"
+    
+    interpretation += "**Author's Secular Approach:** This analysis is based on traditional astrological principles but focuses entirely on practical behavioral insights. The author believes that successful relationships are built through conscious effort, understanding, and personal development rather than religious rituals. These recommendations are grounded in psychology and relationship science.\n\n"
+    
+    interpretation += "**Evidence-Based Compatibility Assessment:**\n"
+    interpretation += "While astrological patterns may indicate certain tendencies, your conscious choices, behaviors, and commitment to growth are what truly determine your relationship's success. This analysis provides insights into potential areas of harmony and challenge, offering practical tools for building a strong partnership.\n\n"
+    
+    # Address canceled doshas positively
+    if canceled_doshas:
+        interpretation += "**Positive Aspects:**\n"
+        for dosha in canceled_doshas:
+            interpretation += f"• {dosha} challenges have been naturally neutralized, reducing potential difficulties\n"
+        interpretation += "\n"
+    
+    # Address active concerns constructively
+    if faults:
+        active_faults = [f for f in faults if f not in canceled_doshas]
+        if active_faults:
+            interpretation += "**Areas for Personal Growth:**\n"
+            interpretation += "These areas require conscious effort and practical behavioral changes:\n\n"
+            
+            for fault in active_faults:
+                interpretation += f"**{fault} Compatibility:**\n"
+                interpretation += f"Focus on developing these practical skills:\n"
+                
+                # Add practical remedies from JSON
+                practical_remedies = CONSTRUCTIVE_REMEDIES.get(fault, {}).get('practical', [])
+                behavioral_remedies = CONSTRUCTIVE_REMEDIES.get(fault, {}).get('behavioral', [])
+                
+                for remedy in practical_remedies[:3]:
+                    interpretation += f"• {remedy}\n"
+                
+                interpretation += f"\n**Behavioral Development:**\n"
+                for remedy in behavioral_remedies[:2]:
+                    interpretation += f"• {remedy}\n"
+                interpretation += "\n"
+    
+    # Universal relationship principles
+    interpretation += "**Evidence-Based Relationship Principles:**\n"
+    interpretation += "Research in psychology shows these principles strengthen relationships:\n\n"
+    
+    interpretation += "• **Communication Skills**: Practice active listening and clear expression\n"
+    interpretation += "• **Emotional Intelligence**: Develop self-awareness and empathy\n"
+    interpretation += "• **Conflict Resolution**: Learn to disagree constructively\n"
+    interpretation += "• **Personal Growth**: Focus on self-improvement rather than changing partner\n"
+    interpretation += "• **Shared Activities**: Engage in meaningful activities together\n"
+    interpretation += "• **Patience & Understanding**: Accept that growth takes time\n"
+    interpretation += "• **Appreciation**: Regularly express gratitude for positive qualities\n\n"
+    
+    interpretation += "**Remember**: Your relationship success depends on your daily choices, communication skills, and commitment to mutual growth. Use these insights as a guide for personal development and building a strong, respectful partnership based on understanding and shared values."
+    
+    return interpretation
+
+def generate_enhanced_remedies(faults: List, canceled_doshas: List) -> Dict:
+    """Generate enhanced secular remedies"""
+    remedies = {}
+    
+    for fault in faults:
+        if fault in canceled_doshas:
+            continue
+            
+        fault_remedies = CONSTRUCTIVE_REMEDIES.get(fault, {})
+        
+        remedies[fault] = {
+            'practical_approaches': fault_remedies.get('practical', []),
+            'behavioral_changes': fault_remedies.get('behavioral', []),
+            'physical_activities': fault_remedies.get('physical_activities', []),
+            'guidance': f"Focus on practical behavioral changes and personal development. The most effective approach combines self-awareness with consistent effort to improve communication and understanding."
+        }
+    
+    return remedies
 
 # Helper functions
 def _are_planets_friends(planet1: str, planet2: str) -> bool:
@@ -707,118 +738,16 @@ def _are_planets_friends(planet1: str, planet2: str) -> bool:
         return True
     return False
 
-def _has_jupiter_aspect_on_mars(mars_data: dict, jupiter_data: dict) -> bool:
-    """Simplified Jupiter aspect check"""
-    mars_house = mars_data.get('house_number', 0)
-    jupiter_house = jupiter_data.get('house_number', 0)
-    
-    if jupiter_house > 0 and mars_house > 0:
-        # Jupiter aspects 5th, 7th, and 9th houses from its position
-        aspect_houses = [
-            (jupiter_house + 4) % 12 if (jupiter_house + 4) % 12 != 0 else 12,
-            (jupiter_house + 6) % 12 if (jupiter_house + 6) % 12 != 0 else 12,
-            (jupiter_house + 8) % 12 if (jupiter_house + 8) % 12 != 0 else 12
-        ]
-        return mars_house in aspect_houses
-    return False
-
-# Enhanced interpretation system
-def generate_constructive_interpretation(scores: dict, faults: list, canceled_doshas: list, 
-                                    compatibility_percentage: float) -> str:
+def match_kundli(a: AstroData, b: AstroData) -> Dict[str, Any]:
     """
-    Generate constructive interpretation that balances traditional wisdom with practical guidance
-    """
-    
-    # Opening statement
-    interpretation = f"**Compatibility Analysis: {compatibility_percentage:.1f}%**\n\n"
-    
-    # Constructive opening
-    interpretation += "While astrological compatibility provides valuable insights, remember that successful relationships are built through mutual effort, understanding, and continuous growth. The stars may influence tendencies, but your conscious choices and behaviors ultimately determine your relationship's success.\n\n"
-    
-    # Address canceled doshas positively
-    if canceled_doshas:
-        interpretation += "**Positive Aspects:**\n"
-        for dosha in canceled_doshas:
-            interpretation += f"• {dosha} Dosha has been naturally canceled, reducing potential challenges in this area\n"
-        interpretation += "\n"
-    
-    # Address active concerns constructively
-    if faults:
-        active_faults = [f for f in faults if f not in canceled_doshas]
-        if active_faults:
-            interpretation += "**Areas for Growth and Attention:**\n"
-            interpretation += "These areas require conscious effort and practical approaches rather than just ritualistic remedies:\n\n"
-            
-            for fault in active_faults:
-                interpretation += f"**{fault} Compatibility:**\n"
-                interpretation += f"While traditional remedies can provide psychological comfort, the most effective approach is to focus on:\n"
-                
-                # Add practical remedies
-                practical_remedies = CONSTRUCTIVE_REMEDIES.get(fault, {}).get('practical', [])
-                behavioral_remedies = CONSTRUCTIVE_REMEDIES.get(fault, {}).get('behavioral', [])
-                
-                for remedy in practical_remedies[:3]:  # Show top 3 practical remedies
-                    interpretation += f"• {remedy}\n"
-                
-                interpretation += f"\n**Behavioral Improvements:**\n"
-                for remedy in behavioral_remedies[:2]:  # Show top 2 behavioral remedies
-                    interpretation += f"• {remedy}\n"
-                
-                interpretation += "\n"
-    
-    # General constructive advice
-    interpretation += "**Universal Relationship Principles:**\n"
-    interpretation += "Regardless of astrological compatibility, these principles can strengthen any relationship:\n\n"
-    
-    interpretation += "• **Communication**: Practice active listening and express your needs clearly and respectfully\n"
-    interpretation += "• **Patience**: Understand that both partners are continuously growing and changing\n"
-    interpretation += "• **Empathy**: Try to understand your partner's perspective, even when you disagree\n"
-    interpretation += "• **Compromise**: Focus on finding solutions that work for both partners\n"
-    interpretation += "• **Appreciation**: Regularly express gratitude for your partner's positive qualities\n"
-    interpretation += "• **Personal Growth**: Work on improving yourself rather than trying to change your partner\n"
-    interpretation += "• **Conflict Resolution**: Learn to disagree respectfully and find constructive solutions\n\n"
-    
-    # Closing message
-    interpretation += "**Remember**: Astrology provides insights, but your daily choices, actions, and commitment to growth determine your relationship's success. Focus on building mutual respect, understanding, and love through practical actions rather than relying solely on rituals.\n\n"
-    
-    interpretation += "The goal is not to eliminate all differences but to learn how to navigate them with wisdom, patience, and love. Every relationship requires effort, but with conscious intention and the right approaches, you can build a strong, fulfilling partnership."
-    
-    return interpretation
-
-def generate_enhanced_remedies(faults: list, canceled_doshas: list) -> dict:
-    """
-    Generate enhanced remedies that balance traditional and practical approaches
-    """
-    remedies = {}
-    
-    for fault in faults:
-        if fault in canceled_doshas:
-            continue  # Skip canceled doshas
-            
-        fault_remedies = CONSTRUCTIVE_REMEDIES.get(fault, {})
-        
-        remedies[fault] = {
-            'traditional_remedies': fault_remedies.get('ritual', []),
-            'practical_approaches': fault_remedies.get('practical', []),
-            'behavioral_changes': fault_remedies.get('behavioral', []),
-            'guidance': f"While traditional remedies provide psychological comfort and spiritual support, the most effective approach is to combine them with practical behavioral changes. Focus on personal growth, improved communication, and mutual understanding."
-        }
-    
-    return remedies
-
-
-def match_kundli(a: AstroData, b: AstroData) -> dict:
-    """
-    Enhanced Ashtakoota compatibility with comprehensive analysis
-    
-    Returns comprehensive compatibility analysis with all improvements
+    Main secular matching function with all enhancements
     """
     # Get dispositions and Moon info
     d1 = get_dispositions(a)
     d2 = get_dispositions(b)
     m1, m2 = d1['moon'], d2['moon']
     
-    # Compute koota scores using enhanced functions
+    # Compute koota scores
     scores = {
         'Varna': varna_koota(m1, m2),
         'Vashya': vashya_koota(m1, m2),
@@ -833,39 +762,33 @@ def match_kundli(a: AstroData, b: AstroData) -> dict:
     total = sum(scores.values())
     max_total = sum(info['max'] for info in KOOTA_INFO.values())
     
-    # Identify faults (zero scores)
+    # Identify faults
     faults = [k for k, v in scores.items() if v == 0]
     
-    # Enhanced Manglik check
-    mg_a, mg_b = manglik_dosha(a), manglik_dosha(b)
-    boy_manglik = {'is_manglik': mg_a}
-    girl_manglik = {'is_manglik': mg_b}
+    # Enhanced Manglik checks
+    mg_a = manglik_dosha(a)
+    mg_b = manglik_dosha(b)
+    boy_manglik = {'is_manglik': mg_a != 'None', 'type': mg_a}
+    girl_manglik = {'is_manglik': mg_b != 'None', 'type': mg_b}
     
     if mg_a != mg_b:
         faults.append('Manglik')
     
-    # Check for dosha cancellations
+    # Chandra Manglik details
+    ch_mang_a = chandra_manglik_dosha_detailed(a)
+    ch_mang_b = chandra_manglik_dosha_detailed(b)
+    
+    # Advanced analysis
     dosha_cancellations = check_dosha_cancellations(m1, m2, faults, d1, d2)
-    
-    # Calculate enhanced compatibility
     compatibility_analysis = calculate_compatibility_percentage(scores)
-    
-    # Enhanced risk assessment
     risk_assessment = assess_relationship_risks(scores, boy_manglik, girl_manglik, 
                                               dosha_cancellations['canceled_doshas'])
-    
-    # Generate enhanced interpretation
-    detailed_interpretation = generate_detailed_interpretation(
-        scores, total, max_total, boy_manglik, girl_manglik, 
-        dosha_cancellations['canceled_doshas']
-    )
-
-    # Generate constructive interpretation
-    constructive_interpretation = generate_constructive_interpretation(
-        scores, faults, dosha_cancellations['canceled_doshas'], compatibility_analysis['weighted_percentage']
-    )
-
-    # Generate enhanced remedies
+    detailed_interpretation = generate_detailed_interpretation(scores, total, max_total, 
+                                                             boy_manglik, girl_manglik, 
+                                                             dosha_cancellations['canceled_doshas'])
+    constructive_interpretation = generate_constructive_interpretation(scores, faults,
+                                                                     dosha_cancellations['canceled_doshas'],
+                                                                     compatibility_analysis['weighted_percentage'])
     enhanced_remedies = generate_enhanced_remedies(faults, dosha_cancellations['canceled_doshas'])
     
     # Build enhanced table
@@ -873,12 +796,10 @@ def match_kundli(a: AstroData, b: AstroData) -> dict:
     for k, pts in scores.items():
         info = KOOTA_INFO[k]
         
-        # Enhanced Boy/Girl type display
+        # Determine boy/girl types
         if k == 'Varna':
-            boy_varna_level = VARNA_MAP[m1['sign_number']]
-            girl_varna_level = VARNA_MAP[m2['sign_number']]
-            boy_type = VARNA_NAME[boy_varna_level]
-            girl_type = VARNA_NAME[girl_varna_level]
+            boy_type = VARNA_NAME[VARNA_MAP[m1['sign_number']]]
+            girl_type = VARNA_NAME[VARNA_MAP[m2['sign_number']]]
         elif k == 'Vashya':
             boy_type = VASHA_MAP[m1['sign_number']]
             girl_type = VASHA_MAP[m2['sign_number']]
@@ -904,7 +825,7 @@ def match_kundli(a: AstroData, b: AstroData) -> dict:
             significance += f" (✓ CANCELED: {dosha_cancellations['cancellation_reasons'][k]})"
         
         table.append({
-            'Koota': f"{k} Koota",
+            'Particular': f"{k} Koota",
             'Boy': boy_type,
             'Girl': girl_type,
             'Max': info['max'],
@@ -912,59 +833,33 @@ def match_kundli(a: AstroData, b: AstroData) -> dict:
             'Significance': significance
         })
     
-    # Add enhanced total row
+    # Add total row
     table.append({
-        'Koota': 'Total',
+        'Particular': 'Total',
         'Boy': '-', 'Girl': '-',
         'Max': max_total,
         'Obtained': total,
         'Significance': f"Overall Compatibility: {compatibility_analysis['weighted_percentage']:.1f}% (Traditional: {compatibility_analysis['traditional_percentage']:.1f}%)"
     })
     
-    # Enhanced interpretation
-    interp_parts = []
-    
-    # Manglik narrative
-    if 'Manglik' in faults:
-        if 'Manglik' in dosha_cancellations['canceled_doshas']:
-            interp_parts.append(f"Manglik Dosha was present but CANCELED due to {dosha_cancellations['cancellation_reasons']['Manglik']}")
-        else:
-            s = f"Boy is {'Manglik' if mg_a else 'not Manglik'}, Girl is {'Manglik' if mg_b else 'not Manglik'}."
-            s += " This requires attention through appropriate remedies."
-            interp_parts.append(s)
-    
-    # Other koota faults
-    for f in faults:
-        if f == 'Manglik': continue
-        if f in dosha_cancellations['canceled_doshas']:
-            interp_parts.append(f"{f} Dosha was CANCELED due to {dosha_cancellations['cancellation_reasons'][f]}")
-        else:
-            desc = KOOTA_INFO[f]['desc']
-            rem = '; '.join(REMINDERS.get(f, []))
-            interp_parts.append(f"{f} Koota scored zero ({desc}); recommended remedies: {rem}.")
-    
-    if not dosha_cancellations['active_doshas']:
-        interp_parts.append("No active doshas detected; the couple shows excellent compatibility across all kootas.")
-    
-    interpretation = ' '.join(interp_parts) if interp_parts else "Compatibility analysis completed successfully."
-    
- 
     return {
         'table': table,
         'faults': faults,
-        'chandra_manglik': {
-            'boys': chandra_manglik_dosha_detailed(a), 
-            'girls': chandra_manglik_dosha_detailed(b)
+        'secular_remedies': {f: SECULAR_REMEDIES.get(f, []) for f in faults},
+        'enhanced_remedies': enhanced_remedies,
+        'manglik_status': {
+            'boy': {'type': mg_a, 'is_manglik': mg_a != 'None'},
+            'girl': {'type': mg_b, 'is_manglik': mg_b != 'None'}
         },
-        'traditional_remedies': {f: CONSTRUCTIVE_REMEDIES.get(f, {}).get('ritual', []) for f in faults},
-        'remedies': enhanced_remedies,
-        'interpretation': constructive_interpretation,
-        # 'remedies': {f: REMINDERS.get(f, []) for f in faults},
-        # 'interpretation': interpretation,
-        'detailed_interpretation': detailed_interpretation,
+        'chandra_manglik': {
+            'boy': ch_mang_a, 
+            'girl': ch_mang_b
+        },
         'dosha_cancellations': dosha_cancellations,
         'compatibility_analysis': compatibility_analysis,
         'risk_assessment': risk_assessment,
+        'detailed_interpretation': detailed_interpretation,
+        'constructive_interpretation': constructive_interpretation,
         'summary': {
             'total_score': total,
             'max_score': max_total,
