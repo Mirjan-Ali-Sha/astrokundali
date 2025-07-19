@@ -728,7 +728,7 @@ def plot_shashtiamsha_chart(astrodata: AstroData, house_system: str = 'whole_sig
     return houses
 
 
-# Exaltation / Debilitation mapping: planet -> (exalt_rashi, debil_rashi)
+# Exaltation / Debilitation mapping
 EX_DE_RASHI = {
     'sun':     (1,  7),    # Exalted in Aries (1), Debilitated in Libra (7)
     'moon':    (2,  8),    # Exalted in Taurus (2), Debilitated in Scorpio (8)
@@ -739,7 +739,6 @@ EX_DE_RASHI = {
     'saturn':  (7,  1)     # Exalted in Libra (7), Debilitated in Aries (1)
 }
 
-# Planets that don't get Ex/De arrows
 EXCEPTIONS = {'rahu', 'ketu', 'uranus', 'neptune', 'pluto'}
 
 def plot_comprehensive_chart(
@@ -749,14 +748,25 @@ def plot_comprehensive_chart(
 ):
     """
     Comprehensive Kundali chart:
-      • Every planet shows ↑ (exalted) or ↓ (debilitated) based on current sign
-      • Retrograde "Re" superscript
-      • Dark maroon for 10-25°, light maroon otherwise
-      • Sign-lord corner tags ^Rashi in green
+      • Planets in houses: degrees, ↑/↓ arrows, retrograde markers, color-coded strength
+      • Drishti aspects: planets aspecting houses shown with _Drishti subscript
+      • Sign lords: ^Rashi tags with combined ^Rashi_Drishti when applicable
+      • Exaltation ↑ and Debilitation ↓ arrows for all planets
+      • Color intensity based on degrees (10-25° = dark, else = light)
     """
     raw    = astrodata.get_rashi_data()
     disp   = get_dispositions(astrodata, house_system)
     houses = _build_houses(raw, house_system, astrodata)
+
+    # Build comprehensive drishti mapping
+    drishti_map = {i+1: [] for i in range(12)}
+    for src_idx, src in enumerate(houses):
+        src_house = src_idx + 1
+        for planet, pdata in src.planets.items():
+            if planet in DRISHTI:
+                for step in DRISHTI[planet]:
+                    tgt = _anticlockwise_house(src_house, step)
+                    drishti_map[tgt].append(planet)
 
     fig, ax = plt.subplots(figsize=(7,7))
     fig.suptitle("Comprehensive Kundali", fontsize=20, y=0.92, weight='bold')
@@ -767,7 +777,7 @@ def plot_comprehensive_chart(
     for verts in HOUSE_VERTICES:
         ax.add_patch(Polygon(verts, closed=True, fill=False, edgecolor='black', linewidth=1))
 
-    # Sign-lord corner tags
+    # Sign-lord corner tags with Drishti integration
     for hi, h in enumerate(houses):
         xs, ys = zip(*HOUSE_VERTICES[hi])
         cx, cy = sum(xs)/len(xs), sum(ys)/len(ys)
@@ -780,55 +790,87 @@ def plot_comprehensive_chart(
         
         lord = SIGN_LORDS[h.sign_num]
         abbr = PLANET_ABBR[lord]
-        ax.text(cx+sdx+6, cy+sdy+4, f"{abbr}$^{{Rashi}}$",
+        
+        # Check if sign lord also has drishti on this house
+        has_drishti = lord in drishti_map[hi+1]
+        
+        if has_drishti:
+            lord_label = f"{abbr}$^{{Rashi}}_{{Drishti}}$"
+        else:
+            lord_label = f"{abbr}$^{{Rashi}}$"
+            
+        ax.text(cx+sdx+6, cy+sdy+4, lord_label,
                 ha='left', va='bottom', fontsize=8, color='darkgreen')
 
-    # Planets in houses - EVERY planet gets an arrow
+    # Planets in houses + Drishti aspects
     for hi, h in enumerate(houses):
         xs, ys = zip(*HOUSE_VERTICES[hi])
         cx, cy = sum(xs)/len(xs), sum(ys)/len(ys)
         region = _region(cx, cy)
         pdx, pdy = PLANET_SHIFT[region]
+        
+        all_display_items = []  # Fresh list for this house
 
-        display_items = []  # Fresh list for this house
-
+        # 1. Planets actually placed in this house
         for pname, pdata in h.planets.items():
             deg = pdata['lon'] % 30
             deg_int = int(deg)
             abbr = PLANET_ABBR[pname]
 
-            # Get the planet's current sign from dispositions
+            # Get current sign for Ex/De arrows
             current_sign = disp[pname]['sign_number']
             
-            # Determine arrow - EVERY planet gets checked
+            # Determine exaltation/debilitation arrow
             arrow = ''
-            if pname not in EXCEPTIONS:  # Skip Rahu, Ketu, etc.
-                if pname in EX_DE_RASHI:
-                    exalt_sign, debil_sign = EX_DE_RASHI[pname]
-                    if current_sign == exalt_sign:
-                        arrow = '↑'  # Exalted
-                    elif current_sign == debil_sign:
-                        arrow = '↓'  # Debilitated
-                    # If neither exalted nor debilitated, no arrow (empty string)
+            if pname not in EXCEPTIONS and pname in EX_DE_RASHI:
+                exalt_sign, debil_sign = EX_DE_RASHI[pname]
+                if current_sign == exalt_sign:
+                    arrow = '↑'  # Exalted
+                elif current_sign == debil_sign:
+                    arrow = '↓'  # Debilitated
 
-            # Build the label
+            # Build label with degree and arrow
             label = f"{abbr} {deg_int}°{arrow}"
 
-            # Add retrograde if applicable
-            if pdata.get('retro', False):  # Use 'retro' key from dispositions
+            # Add retrograde marker
+            if pdata.get('retro', False):
                 label += "$^{Re}$"
 
-            # Color based on degree
-            color = '#800000' if 10 <= deg <= 25 else '#C04040'  # Dark vs light maroon
+            # Color based on degree strength
+            color = '#800000' if 10 <= deg <= 25 else '#C04040'
 
-            display_items.append((label, color))
+            all_display_items.append((label, color))
 
-        # Position and draw all labels for this house
-        for idx, (lbl, color) in enumerate(display_items):
-            if len(display_items) == 1:
+        # 2. Planets aspecting this house (Drishti)
+        sign_lord = SIGN_LORDS[h.sign_num]
+        for planet in drishti_map[hi+1]:
+            # Exclude planets already in house and sign lord (already shown)
+            if planet not in h.planets and planet != sign_lord:
+                abbr = PLANET_ABBR[planet]
+                
+                # Get aspecting planet's sign for Ex/De markers
+                current_sign = disp[planet]['sign_number']
+                
+                # Add Ex/De markers to Drishti planets too
+                ex_de_marker = ''
+                if planet not in EXCEPTIONS and planet in EX_DE_RASHI:
+                    exalt_sign, debil_sign = EX_DE_RASHI[planet]
+                    if current_sign == exalt_sign:
+                        ex_de_marker = '$^{Ex}$'
+                    elif current_sign == debil_sign:
+                        ex_de_marker = '$_{De}$'
+                
+                drishti_label = f"{abbr}$_{{Drishti}}${ex_de_marker}"
+                
+                # Drishti planets use standard color
+                all_display_items.append((drishti_label, '#8B4513'))  # Brown color for aspects
+
+        # 3. Position all items around house center
+        for idx, (lbl, color) in enumerate(all_display_items):
+            if len(all_display_items) == 1:
                 angle, radius = 0, 0
             else:
-                angle = 2 * math.pi * idx / len(display_items)
+                angle = 2 * math.pi * idx / len(all_display_items)
                 radius = 18
             
             x0 = cx + pdx + radius * math.cos(angle)
@@ -839,10 +881,10 @@ def plot_comprehensive_chart(
             ax.text(x, y, lbl, ha='center', va='center', 
                    fontsize=7, weight='bold', color=color)
 
-    # Footer legend
+    # Enhanced footer legend
     fig.text(0.5, 0.03,
-             "↑=Exalted • ↓=Debilitated • Re=Retrograde • Dark=Strong (10–25°) • Light=Weak (0-10°, 25-30°)",
-             ha='center', fontsize=10)
+             "↑=Exalted • ↓=Debilitated • Re=Retrograde • _Drishti=Aspect • Dark=Strong • Light=Weak",
+             ha='center', fontsize=9)
 
     plt.show()
     return houses

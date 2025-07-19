@@ -1,17 +1,17 @@
 """
 astrokundali/match.py
 
-Secular Ashtakoota (Guna Milan) marriage matching module.
+Enhanced Ashtakoota (Guna Milan) marriage matching module with dynamic interpretations.
 Features:
-- Secular approach without religious remedies
 - Angshik & Purna Manglik dosha classification
 - Chandra Manglik Dosha with severity levels
+- Dynamic, personalized compatibility interpretations
+- House-specific analysis and practical guidance
 - Complete 14-animal Yoni compatibility matrix
-- Enhanced Graha Maitri scoring (0, 0.5, 1, 3, 4, 5)
+- Enhanced Graha Maitri scoring
 - Advanced dosha cancellation rules
-- Weighted compatibility & risk assessment
-- Behavioral and practical remedies only
-- Constructive interpretations based on psychology
+- Weighted compatibility calculation
+- Risk assessment with mitigation strategies
 """
 
 import json
@@ -21,9 +21,9 @@ from dataclasses import dataclass
 from .astro_data import AstroData
 from .dispositions import get_dispositions
 
-# Load secular constructive remedies from JSON
+# Load constructive remedies from JSON
 def load_constructive_remedies():
-    """Load secular constructive remedies from JSON file"""
+    """Load constructive remedies from JSON file"""
     try:
         json_path = os.path.join(os.path.dirname(__file__), 'data', 'cons_rem_marriage.json')
         with open(json_path, 'r', encoding='utf-8') as f:
@@ -80,55 +80,6 @@ KOOTA_INFO = {
     'Gana': {'max':6, 'desc':'Temperamental & Behavioral Match'},
     'Bhakoot': {'max':7, 'desc':'Financial & Emotional Stability'},
     'Nadi': {'max':8, 'desc':'Genetic & Health Harmony'}
-}
-
-# Secular remedies (no religious content)
-REMEDIES = {
-    'Varna': [
-        'Practice mutual respect for different social backgrounds',
-        'Engage in educational activities together',
-        'Focus on personal character development'
-    ],
-    'Vashya': [
-        'Develop balanced decision-making skills',
-        'Practice healthy communication techniques',
-        'Learn conflict resolution strategies'
-    ],
-    'Tara': [
-        'Maintain healthy lifestyle habits together',
-        'Practice stress management techniques',
-        'Focus on preventive healthcare'
-    ],
-    'Yoni': [
-        'Improve emotional and physical communication',
-        'Practice patience and understanding',
-        'Focus on emotional bonding activities'
-    ],
-    'Gana': [
-        'Learn anger management techniques',
-        'Practice empathy and understanding',
-        'Develop conflict de-escalation skills'
-    ],
-    'Bhakoot': [
-        'Practice transparent financial communication',
-        'Develop emotional regulation skills',
-        'Focus on partnership building'
-    ],
-    'Graha Maitri': [
-        'Practice active listening skills',
-        'Develop emotional intelligence',
-        'Create shared interests and activities'
-    ],
-    'Nadi': [
-        'Focus on healthy lifestyle practices',
-        'Maintain open health communication',
-        'Seek proper medical guidance when needed'
-    ],
-    'Manglik': [
-        'Practice anger management techniques',
-        'Learn constructive conflict resolution',
-        'Focus on patience and understanding'
-    ]
 }
 
 # Planetary friendship matrix
@@ -421,6 +372,392 @@ def chandra_manglik_dosha_detailed(data: AstroData) -> Dict[str, Any]:
             'description': 'No Chandra Manglik Dosha present'
         }
 
+def get_mars_house_position(person_data: Dict) -> int:
+    """Get Mars house position for Manglik analysis"""
+    # Calculate Mars house position based on dispositions
+    # This is a simplified calculation - you may need to adjust based on your data structure
+    mars_sign = person_data.get('sign_number', 1)
+    return ((mars_sign - 1) % 12) + 1
+
+def get_manglik_house_effects(house: int, gender: str) -> List[str]:
+    """Get specific effects of Mars in different houses for Manglik analysis"""
+    effects = {
+        1: [
+            f"Mars in 1st house makes the {gender} physically very strong and assertive",
+            f"May lead to dominance issues in relationships",
+            f"Temperament can be aggressive and impulsive"
+        ],
+        2: [
+            f"Mars in 2nd house affects family harmony and speech patterns",
+            f"May cause financial disagreements due to impulsive spending",
+            f"Sharp speech that might hurt partner's feelings"
+        ],
+        4: [
+            f"Mars in 4th house creates domestic unrest and property disputes",
+            f"Mother's health may be affected",
+            f"Home environment may be tense and argumentative"
+        ],
+        7: [
+            f"Mars in 7th house directly impacts marital happiness",
+            f"Partnership conflicts and power struggles are likely",
+            f"May cause delays or problems in marriage"
+        ],
+        8: [
+            f"Mars in 8th house brings sudden changes and transformation",
+            f"Accidents or health issues are possible",
+            f"Intense sexual energy but also relationship turbulence"
+        ],
+        12: [
+            f"Mars in 12th house indicates high sexual energy and desires",
+            f"More energetic in bed but may seek multiple partners",
+            f"Foreign travel and expenditure on pleasures"
+        ]
+    }
+    
+    return effects.get(house, [f"Mars in {house}th house creates moderate energy influences"])
+
+def get_chandra_manglik_effects(house: int, severity: str, gender: str) -> List[str]:
+    """Get specific effects of Chandra Manglik based on house and severity"""
+    base_effects = {
+        1: [f"Self-image conflicts and emotional impulsiveness"],
+        2: [f"Family emotional issues and speech-related conflicts"],
+        4: [f"Domestic emotional unrest and mother-related concerns"],
+        5: [f"Romantic intensity and creative emotional expression"],
+        7: [f"Partnership emotional conflicts and marriage challenges"],
+        8: [f"Deep emotional transformation and psychological intensity"],
+        12: [f"Subconscious emotional conflicts and spiritual seeking"]
+    }
+    
+    effects = base_effects.get(house, [f"Emotional challenges in {house}th house matters"])
+    
+    if severity == 'High':
+        effects.append(f"{severity} intensity - requires careful emotional management")
+    elif severity == 'Medium':
+        effects.append(f"{severity} impact - manageable with awareness")
+    else:
+        effects.append(f"{severity} effect - minor emotional adjustments needed")
+    
+    return effects
+
+def analyze_gana_compatibility(boy_gana: str, girl_gana: str) -> List[str]:
+    """Analyze Gana compatibility and provide specific insights"""
+    compatibility_matrix = {
+        ('Deva', 'Deva'): [
+            "Excellent temperamental match - both are spiritually inclined",
+            "Mental harmony and similar life approaches",
+            "Mutual respect and understanding comes naturally"
+        ],
+        ('Deva', 'Manushya'): [
+            "Good compatibility - spiritual meets practical",
+            "Boy's idealistic nature balances Girl's practical approach",
+            "Minor adjustments needed in lifestyle preferences"
+        ],
+        ('Deva', 'Rakshasa'): [
+            "Challenging combination - opposite temperaments",
+            "Spiritual vs Material conflicts are likely",
+            "Significant effort required for mental harmony"
+        ],
+        ('Manushya', 'Deva'): [
+            "Good compatibility - practical meets spiritual",
+            "Girl's idealistic nature balances Boy's practical approach",
+            "Minor adjustments needed in lifestyle preferences"
+        ],
+        ('Manushya', 'Manushya'): [
+            "Balanced match - similar practical approaches",
+            "Good understanding of worldly matters",
+            "Harmonious lifestyle and goal alignment"
+        ],
+        ('Manushya', 'Rakshasa'): [
+            "Moderate compatibility - practical meets ambitious",
+            "Different priorities may cause occasional conflicts",
+            "Compromise needed in decision-making"
+        ],
+        ('Rakshasa', 'Deva'): [
+            "Challenging combination - opposite temperaments",
+            "Material vs Spiritual conflicts are likely",
+            "Significant effort required for mental harmony"
+        ],
+        ('Rakshasa', 'Manushya'): [
+            "Moderate compatibility - ambitious meets practical",
+            "Different priorities may cause occasional conflicts",
+            "Compromise needed in decision-making"
+        ],
+        ('Rakshasa', 'Rakshasa'): [
+            "Intense combination - both are highly ambitious",
+            "Power struggles and ego clashes possible",
+            "Strong physical attraction but mental conflicts likely"
+        ]
+    }
+    
+    return compatibility_matrix.get((boy_gana, girl_gana), ["Moderate compatibility expected"])
+
+def analyze_yoni_compatibility(boy_yoni: str, girl_yoni: str) -> List[str]:
+    """Analyze Yoni compatibility for physical and intimate harmony"""
+    
+    # Define animal characteristics
+    yoni_traits = {
+        'Horse': 'energetic and freedom-loving',
+        'Elephant': 'strong and stable',
+        'Sheep': 'gentle and mild',
+        'Snake': 'mysterious and sensual',
+        'Dog': 'loyal and protective',
+        'Cat': 'independent and graceful',
+        'Rat': 'clever and adaptable',
+        'Cow': 'nurturing and patient',
+        'Buffalo': 'powerful and determined',
+        'Tiger': 'passionate and dominant',
+        'Deer': 'gentle and sensitive',
+        'Monkey': 'playful and curious',
+        'Lion': 'royal and commanding',
+        'Mongoose': 'alert and protective'
+    }
+    
+    boy_trait = yoni_traits.get(boy_yoni, 'balanced')
+    girl_trait = yoni_traits.get(girl_yoni, 'balanced')
+    
+    analysis = [f"Boy is {boy_trait} while Girl is {girl_trait}"]
+    
+    # Same yoni - perfect match
+    if boy_yoni == girl_yoni:
+        analysis.extend([
+            "Perfect physical compatibility - same animal nature",
+            "Natural understanding of each other's needs",
+            "Excellent intimate harmony and attraction"
+        ])
+    # Enemy combinations
+    elif (boy_yoni == 'Cat' and girl_yoni == 'Rat') or (boy_yoni == 'Rat' and girl_yoni == 'Cat'):
+        analysis.extend([
+            "Natural enemies - significant physical incompatibility",
+            "Attraction-repulsion cycle in intimate moments",
+            "Requires major adjustments in physical relationship"
+        ])
+    elif (boy_yoni == 'Mongoose' and girl_yoni == 'Snake') or (boy_yoni == 'Snake' and girl_yoni == 'Mongoose'):
+        analysis.extend([
+            "Conflicting natures - predator-prey relationship",
+            "Physical tension and misunderstandings likely",
+            "Trust issues in intimate relationships"
+        ])
+    # Friendly combinations
+    elif (boy_yoni in ['Horse', 'Elephant'] and girl_yoni in ['Horse', 'Elephant']):
+        analysis.extend([
+            "Strong physical compatibility - both powerful natures",
+            "Good intimate understanding and mutual respect",
+            "Balanced energy in physical relationship"
+        ])
+    else:
+        analysis.extend([
+            "Moderate physical compatibility with some adjustments needed",
+            "Understanding required for different physical needs",
+            "Growth possible through patience and communication"
+        ])
+    
+    return analysis
+
+def generate_marriage_recommendation(scores: Dict, major_issues: List, 
+                                   compatibility_areas: List) -> List[str]:
+    """Generate marriage recommendation with specific suggestions"""
+    
+    total_score = sum(scores.values())
+    max_total = sum(info['max'] for info in KOOTA_INFO.values())
+    percentage = (total_score / max_total) * 100
+    
+    recommendation = []
+    
+    if percentage >= 70:
+        recommendation.append("Marriage Recommendation: HIGHLY FAVORABLE")
+        recommendation.append("This combination shows excellent compatibility potential.")
+    elif percentage >= 50:
+        recommendation.append("Marriage Recommendation: FAVORABLE WITH CARE")
+        recommendation.append("This combination can work well with conscious effort and understanding.")
+    else:
+        recommendation.append("Marriage Recommendation: REQUIRES SIGNIFICANT EFFORT")
+        recommendation.append("This combination faces challenges that need serious consideration.")
+    
+    recommendation.append("")
+    
+    if major_issues:
+        recommendation.append("If you decide to marry, focus on these areas:")
+        
+        if "Physical and Intimate compatibility" in str(major_issues):
+            recommendation.extend([
+                "• Physical Compatibility: Regular gym workouts and physical exercise together",
+                "• Intimate Understanding: Open communication about physical needs and boundaries",
+                "• Fitness Activities: Dancing, sports, or yoga to build physical harmony"
+            ])
+        
+        if "Temperamental conflicts" in str(major_issues):
+            recommendation.extend([
+                "• Mental Compatibility: Meditation and anger management practices",
+                "• Communication Skills: Conflict resolution and active listening training",
+                "• Stress Management: Regular relaxation techniques and stress-busting activities"
+            ])
+        
+        if "Financial and Emotional Stability" in str(major_issues):
+            recommendation.extend([
+                "• Financial Planning: Joint budgeting and financial goal setting",
+                "• Emotional Bonding: Regular relationship counseling and emotional sharing",
+                "• Trust Building: Transparency in all financial and emotional matters"
+            ])
+        
+        if "Health and Genetic" in str(major_issues):
+            recommendation.extend([
+                "• Health Management: Regular health check-ups and preventive care",
+                "• Lifestyle Harmony: Similar diet, exercise, and wellness routines",
+                "• Medical Consultation: Genetic counseling before planning children"
+            ])
+        
+        if "Different Manglik status" in str(major_issues):
+            recommendation.extend([
+                "• Energy Balance: Regular physical exercise to channel Mars energy",
+                "• Patience Practice: Anger management and emotional regulation techniques",
+                "• Conflict Resolution: Professional guidance for handling disagreements"
+            ])
+    
+    recommendation.append("")
+    recommendation.append("Remember: Compatibility scores indicate tendencies, not certainties. Your commitment, communication, and mutual effort determine the actual success of your relationship.")
+    
+    return recommendation
+
+def generate_dynamic_interpretation(boy_data: Dict, girl_data: Dict, 
+                                  boy_manglik: Dict, girl_manglik: Dict,
+                                  ch_mang_a: Dict, ch_mang_b: Dict,
+                                  scores: Dict, faults: List) -> str:
+    """
+    Generate dynamic, personalized compatibility interpretation based on individual characteristics.
+    """
+    interpretation = []
+    
+    # Manglik Analysis
+    boy_manglik_type = boy_manglik['type']
+    girl_manglik_type = girl_manglik['type']
+    
+    manglik_analysis = []
+    
+    if boy_manglik_type != 'None':
+        if boy_manglik_type == 'Anshik':
+            manglik_analysis.append(f"The Boy is Anshik Manglik, indicating moderate Mars influence.")
+        else:
+            manglik_analysis.append(f"The Boy is Purna Manglik, indicating strong Mars influence.")
+            
+        # Get Mars house position for specific effects
+        boy_mars_house = get_mars_house_position(boy_data)
+        manglik_effects = get_manglik_house_effects(boy_mars_house, 'boy')
+        manglik_analysis.extend(manglik_effects)
+    else:
+        manglik_analysis.append("The Boy is not Manglik, indicating balanced Mars energy.")
+    
+    if girl_manglik_type != 'None':
+        if girl_manglik_type == 'Anshik':
+            manglik_analysis.append(f"The Girl is Anshik Manglik, indicating moderate Mars influence.")
+        else:
+            manglik_analysis.append(f"The Girl is Purna Manglik, indicating strong Mars influence.")
+            
+        # Get Mars house position for specific effects
+        girl_mars_house = get_mars_house_position(girl_data)
+        manglik_effects = get_manglik_house_effects(girl_mars_house, 'girl')
+        manglik_analysis.extend(manglik_effects)
+    else:
+        manglik_analysis.append("The Girl is not Manglik, indicating balanced Mars energy.")
+    
+    # Chandra Manglik Analysis
+    chandra_analysis = []
+    
+    if ch_mang_a['is_chandra_manglik']:
+        severity = ch_mang_a['severity']
+        house = ch_mang_a['house']
+        chandra_analysis.append(f"The Boy has {severity} Chandra Manglik (Mars in {house}th house from Moon).")
+        chandra_effects = get_chandra_manglik_effects(house, severity, 'boy')
+        chandra_analysis.extend(chandra_effects)
+    else:
+        chandra_analysis.append("The Boy is not Chandra Manglik, indicating emotional balance.")
+    
+    if ch_mang_b['is_chandra_manglik']:
+        severity = ch_mang_b['severity']
+        house = ch_mang_b['house']
+        chandra_analysis.append(f"The Girl has {severity} Chandra Manglik (Mars in {house}th house from Moon).")
+        chandra_effects = get_chandra_manglik_effects(house, severity, 'girl')
+        chandra_analysis.extend(chandra_effects)
+    else:
+        chandra_analysis.append("The Girl is not Chandra Manglik, indicating emotional balance.")
+    
+    # Gana Compatibility Analysis
+    boy_gana = GANA_GROUPS[boy_data['nakshatra']]
+    girl_gana = GANA_GROUPS[girl_data['nakshatra']]
+    
+    gana_analysis = []
+    gana_analysis.append(f"The Boy belongs to {boy_gana} Gana and the Girl belongs to {girl_gana} Gana.")
+    
+    gana_compatibility = analyze_gana_compatibility(boy_gana, girl_gana)
+    gana_analysis.extend(gana_compatibility)
+    
+    # Yoni Compatibility Analysis
+    boy_yoni = YONI_MAP[boy_data['nakshatra']]
+    girl_yoni = YONI_MAP[girl_data['nakshatra']]
+    
+    yoni_analysis = []
+    yoni_analysis.append(f"The Boy's Yoni is {boy_yoni} and the Girl's Yoni is {girl_yoni}.")
+    
+    yoni_compatibility = analyze_yoni_compatibility(boy_yoni, girl_yoni)
+    yoni_analysis.extend(yoni_compatibility)
+    
+    # Overall Compatibility Assessment
+    overall_analysis = []
+    
+    # Analyze major compatibility issues
+    major_issues = []
+    compatibility_areas = []
+    
+    if scores.get('Nadi', 0) == 0:
+        major_issues.append("Health and Genetic Compatibility concerns due to same Nadi")
+    
+    if scores.get('Bhakoot', 0) == 0:
+        major_issues.append("Financial and Emotional Stability challenges")
+    
+    if scores.get('Gana', 0) <= 1:
+        major_issues.append("Temperamental conflicts due to different Gana types")
+    
+    if scores.get('Yoni', 0) <= 1:
+        major_issues.append("Physical and Intimate compatibility concerns")
+    
+    if boy_manglik['is_manglik'] != girl_manglik['is_manglik']:
+        major_issues.append("Different Manglik status creating energy imbalance")
+    
+    # Positive compatibility areas
+    if scores.get('Varna', 0) >= 1:
+        compatibility_areas.append("Spiritual and Social compatibility is favorable")
+    
+    if scores.get('Tara', 0) >= 2:
+        compatibility_areas.append("Health and Longevity prospects are good")
+    
+    if scores.get('Graha Maitri', 0) >= 3:
+        compatibility_areas.append("Mental and Emotional harmony is present")
+    
+    # Compile final interpretation
+    interpretation.extend(manglik_analysis)
+    interpretation.append("")
+    interpretation.extend(chandra_analysis)
+    interpretation.append("")
+    interpretation.extend(gana_analysis)
+    interpretation.append("")
+    interpretation.extend(yoni_analysis)
+    interpretation.append("")
+    
+    if compatibility_areas:
+        interpretation.append("Positive Compatibility Areas:")
+        interpretation.extend([f"• {area}" for area in compatibility_areas])
+        interpretation.append("")
+    
+    if major_issues:
+        interpretation.append("Areas Requiring Attention:")
+        interpretation.extend([f"• {issue}" for issue in major_issues])
+        interpretation.append("")
+    
+    # Marriage Recommendation
+    recommendation = generate_marriage_recommendation(scores, major_issues, compatibility_areas)
+    interpretation.extend(recommendation)
+    
+    return "\n".join(interpretation)
+
 def check_dosha_cancellations(m1: Dict, m2: Dict, faults: List[str], d1: Dict, d2: Dict) -> Dict:
     """Enhanced dosha cancellation with comprehensive rules"""
     canceled_doshas = []
@@ -589,131 +926,8 @@ def assess_relationship_risks(scores: Dict, boy_manglik: Dict, girl_manglik: Dic
         'risk_summary': f"Identified {len(risks)} risk areas with {overall_risk_level} overall risk level"
     }
 
-def generate_detailed_interpretation(scores: Dict, total_score: float, max_total: float,
-                                   boy_manglik: Dict, girl_manglik: Dict, 
-                                   canceled_doshas: List) -> Dict:
-    """Enhanced interpretation with cancellation awareness"""
-    effective_total = total_score
-    for dosha in canceled_doshas:
-        if dosha in KOOTA_INFO:
-            effective_total += KOOTA_INFO[dosha]['max']
-    
-    effective_percentage = (effective_total / max_total) * 100
-    compatibility_percentage = (total_score / max_total) * 100
-    
-    # Enhanced compatibility assessment
-    if effective_percentage >= 85:
-        overall_status = "Excellent"
-        overall_description = "This is an exceptional match with outstanding compatibility. The canceled doshas further enhance the prospects."
-    elif effective_percentage >= 70:
-        overall_status = "Very Good"
-        overall_description = "This is a very good match with strong compatibility potential and favorable prospects."
-    elif effective_percentage >= 55:
-        overall_status = "Good"
-        overall_description = "This is a good match with acceptable compatibility showing promise for stability."
-    elif effective_percentage >= 40:
-        overall_status = "Fair"
-        overall_description = "This is a fair match with moderate compatibility requiring understanding."
-    else:
-        overall_status = "Poor"
-        overall_description = "This match shows significant compatibility challenges requiring consideration."
-    
-    # Analyze strengths and concerns
-    strength_areas = []
-    concern_areas = []
-    
-    for koota_name, obtained_score in scores.items():
-        max_score = KOOTA_INFO[koota_name]['max']
-        percentage = (obtained_score / max_score) * 100
-        
-        if percentage >= 80:
-            strength_areas.append({
-                'koota': koota_name,
-                'score': obtained_score,
-                'max': max_score,
-                'analysis': f"Excellent compatibility in {KOOTA_INFO[koota_name]['desc']}"
-            })
-        elif percentage <= 30 and koota_name not in canceled_doshas:
-            concern_areas.append({
-                'koota': koota_name,
-                'score': obtained_score,
-                'max': max_score,
-                'analysis': f"Challenges in {KOOTA_INFO[koota_name]['desc']} requiring attention"
-            })
-    
-    return {
-        'overall_compatibility': {
-            'percentage': round(compatibility_percentage, 2),
-            'effective_percentage': round(effective_percentage, 2),
-            'status': overall_status,
-            'description': overall_description
-        },
-        'strength_areas': strength_areas,
-        'concern_areas': concern_areas,
-        'recommendations': [],
-        'cancellation_impact': len(canceled_doshas),
-        'detailed_summary': f"With {int(total_score)} out of {max_total} points (effective: {int(effective_total)}), this match shows {overall_status.lower()} compatibility. {overall_description}"
-    }
-
-def generate_constructive_interpretation(scores: Dict, faults: List, canceled_doshas: List,
-                                       compatibility_percentage: float) -> str:
-    """Generate secular interpretation focusing on behavioral and practical guidance"""
-    
-    interpretation = f"**Compatibility Analysis: {compatibility_percentage:.1f}%**\n\n"
-    
-    interpretation += "**Author's Secular Approach:** This analysis is based on traditional astrological principles but focuses entirely on practical behavioral insights. The author believes that successful relationships are built through conscious effort, understanding, and personal development rather than religious rituals. These recommendations are grounded in psychology and relationship science.\n\n"
-    
-    interpretation += "**Evidence-Based Compatibility Assessment:**\n"
-    interpretation += "While astrological patterns may indicate certain tendencies, your conscious choices, behaviors, and commitment to growth are what truly determine your relationship's success. This analysis provides insights into potential areas of harmony and challenge, offering practical tools for building a strong partnership.\n\n"
-    
-    # Address canceled doshas positively
-    if canceled_doshas:
-        interpretation += "**Positive Aspects:**\n"
-        for dosha in canceled_doshas:
-            interpretation += f"• {dosha} challenges have been naturally neutralized, reducing potential difficulties\n"
-        interpretation += "\n"
-    
-    # Address active concerns constructively
-    if faults:
-        active_faults = [f for f in faults if f not in canceled_doshas]
-        if active_faults:
-            interpretation += "**Areas for Personal Growth:**\n"
-            interpretation += "These areas require conscious effort and practical behavioral changes:\n\n"
-            
-            for fault in active_faults:
-                interpretation += f"**{fault} Compatibility:**\n"
-                interpretation += f"Focus on developing these practical skills:\n"
-                
-                # Add practical remedies from JSON
-                practical_remedies = CONSTRUCTIVE_REMEDIES.get(fault, {}).get('practical', [])
-                behavioral_remedies = CONSTRUCTIVE_REMEDIES.get(fault, {}).get('behavioral', [])
-                
-                for remedy in practical_remedies[:3]:
-                    interpretation += f"• {remedy}\n"
-                
-                interpretation += f"\n**Behavioral Development:**\n"
-                for remedy in behavioral_remedies[:2]:
-                    interpretation += f"• {remedy}\n"
-                interpretation += "\n"
-    
-    # Universal relationship principles
-    interpretation += "**Evidence-Based Relationship Principles:**\n"
-    interpretation += "Research in psychology shows these principles strengthen relationships:\n\n"
-    
-    interpretation += "• **Communication Skills**: Practice active listening and clear expression\n"
-    interpretation += "• **Emotional Intelligence**: Develop self-awareness and empathy\n"
-    interpretation += "• **Conflict Resolution**: Learn to disagree constructively\n"
-    interpretation += "• **Personal Growth**: Focus on self-improvement rather than changing partner\n"
-    interpretation += "• **Shared Activities**: Engage in meaningful activities together\n"
-    interpretation += "• **Patience & Understanding**: Accept that growth takes time\n"
-    interpretation += "• **Appreciation**: Regularly express gratitude for positive qualities\n\n"
-    
-    interpretation += "**Remember**: Your relationship success depends on your daily choices, communication skills, and commitment to mutual growth. Use these insights as a guide for personal development and building a strong, respectful partnership based on understanding and shared values."
-    
-    return interpretation
-
 def generate_enhanced_remedies(faults: List, canceled_doshas: List) -> Dict:
-    """Generate enhanced secular remedies"""
+    """Generate enhanced practical remedies"""
     remedies = {}
     
     for fault in faults:
@@ -738,85 +952,23 @@ def _are_planets_friends(planet1: str, planet2: str) -> bool:
         return True
     return False
 
-def format_remedy_text(remedy_list: List[str]) -> List[str]:
-    """Ensure all remedies are properly formatted sentences"""
-    formatted = []
-    for remedy in remedy_list:
-        # Ensure it ends with a period
-        if not remedy.endswith('.'):
-            remedy += '.'
-        # Ensure it starts with capital letter
-        remedy = remedy[0].upper() + remedy[1:] if remedy else ''
-        formatted.append(remedy)
-    return formatted
-
-def format_table_value(value: str) -> str:
-    """Standardize table display values"""
-    if not value:
-        return 'N/A'
-    return value.title() if value.lower() != value else value
-
-def build_enhanced_table(scores, m1, m2, dosha_cancellations):
-    """Build table with consistent formatting"""
-    
-    # Define display value mappings
-    rashi_names = ['Aries', 'Taurus', 'Gemini', 'Cancer', 'Leo', 'Virgo', 
-                   'Libra', 'Scorpio', 'Sagittarius', 'Capricorn', 'Aquarius', 'Pisces']
-    
-    table = []
-    for k, pts in scores.items():
-        info = KOOTA_INFO[k]
-        
-        # Get properly formatted boy/girl types
-        if k == 'Varna':
-            boy_type = VARNA_NAME[VARNA_MAP[m1['sign_number']]]
-            girl_type = VARNA_NAME[VARNA_MAP[m2['sign_number']]]
-        elif k == 'Vashya':
-            boy_type = VASHA_MAP[m1['sign_number']]
-            girl_type = VASHA_MAP[m2['sign_number']]
-        elif k == 'Tara':
-            from .dispositions import NAKSHATRA_LORDS
-            boy_type = NAKSHATRA_LORDS[m1['nakshatra']-1].title()
-            girl_type = NAKSHATRA_LORDS[m2['nakshatra']-1].title()
-        elif k == 'Yoni':
-            boy_type = YONI_MAP[m1['nakshatra']]
-            girl_type = YONI_MAP[m2['nakshatra']]
-        elif k == 'Graha Maitri':
-            boy_type = m1.get('sign_lord', 'Unknown').title()
-            girl_type = m2.get('sign_lord', 'Unknown').title()
-        elif k == 'Gana':
-            boy_type = GANA_GROUPS[m1['nakshatra']]
-            girl_type = GANA_GROUPS[m2['nakshatra']]
-        elif k == 'Bhakoot':
-            boy_type = rashi_names[m1['sign_number']-1]
-            girl_type = rashi_names[m2['sign_number']-1]
-        elif k == 'Nadi':
-            boy_type = NADI_MAP[m1['nakshatra']]
-            girl_type = NADI_MAP[m2['nakshatra']]
-        else:
-            boy_type = 'N/A'
-            girl_type = 'N/A'
-        
-        # Add cancellation indicator with proper formatting
-        significance = info['desc']
-        if k in dosha_cancellations['canceled_doshas']:
-            significance += f" (✓ CANCELED: {dosha_cancellations['cancellation_reasons'][k]})"
-        
-        table.append({
-            'Particular': f"{k} Koota",
-            'Boy': boy_type,
-            'Girl': girl_type,
-            'Max': info['max'],
-            'Obtained': pts,
-            'Significance': significance
-        })
-    
-    return table
-
+def refine_node_names(report: Any) -> Any:
+    """Replace any 'north_node'/'south_node' in all strings with 'rahu'/'ketu'."""
+    if isinstance(report, dict):
+        return {k.replace('north_node','rahu').replace('south_node','ketu'): refine_node_names(v)
+                for k,v in report.items()}
+    if isinstance(report,list):
+        return [refine_node_names(i) for i in report]
+    if isinstance(report,tuple):
+        return tuple(refine_node_names(list(report)))
+    if isinstance(report,str):
+        return report.replace('north_node','rahu').replace('south_node','ketu')\
+                     .replace('North_Node','Rahu').replace('South_Node','Ketu')
+    return report
 
 def match_kundli(a: AstroData, b: AstroData) -> Dict[str, Any]:
     """
-    Main secular matching function with all enhancements
+    Enhanced matching function with dynamic interpretations
     """
     # Get dispositions and Moon info
     d1 = get_dispositions(a)
@@ -837,8 +989,6 @@ def match_kundli(a: AstroData, b: AstroData) -> Dict[str, Any]:
     
     total = sum(scores.values())
     max_total = sum(info['max'] for info in KOOTA_INFO.values())
-    
-    # Identify faults
     faults = [k for k, v in scores.items() if v == 0]
     
     # Enhanced Manglik checks
@@ -854,17 +1004,16 @@ def match_kundli(a: AstroData, b: AstroData) -> Dict[str, Any]:
     ch_mang_a = chandra_manglik_dosha_detailed(a)
     ch_mang_b = chandra_manglik_dosha_detailed(b)
     
+    # Generate dynamic interpretation
+    dynamic_interpretation = generate_dynamic_interpretation(
+        m1, m2, boy_manglik, girl_manglik, ch_mang_a, ch_mang_b, scores, faults
+    )
+    
     # Advanced analysis
     dosha_cancellations = check_dosha_cancellations(m1, m2, faults, d1, d2)
     compatibility_analysis = calculate_compatibility_percentage(scores)
     risk_assessment = assess_relationship_risks(scores, boy_manglik, girl_manglik, 
                                               dosha_cancellations['canceled_doshas'])
-    detailed_interpretation = generate_detailed_interpretation(scores, total, max_total, 
-                                                             boy_manglik, girl_manglik, 
-                                                             dosha_cancellations['canceled_doshas'])
-    constructive_interpretation = generate_constructive_interpretation(scores, faults,
-                                                                     dosha_cancellations['canceled_doshas'],
-                                                                     compatibility_analysis['weighted_percentage'])
     enhanced_remedies = generate_enhanced_remedies(faults, dosha_cancellations['canceled_doshas'])
     
     # Build enhanced table
@@ -874,24 +1023,23 @@ def match_kundli(a: AstroData, b: AstroData) -> Dict[str, Any]:
         
         # Determine boy/girl types
         if k == 'Varna':
-            boy_type = VARNA_NAME[VARNA_MAP[m1['sign_number']]].title()
-            girl_type = VARNA_NAME[VARNA_MAP[m2['sign_number']]].title()
+            boy_type = VARNA_NAME[VARNA_MAP[m1['sign_number']]]
+            girl_type = VARNA_NAME[VARNA_MAP[m2['sign_number']]]
         elif k == 'Vashya':
-            boy_type = VASHA_MAP[m1['sign_number']].title()
-            girl_type = VASHA_MAP[m2['sign_number']].title()
+            boy_type = VASHA_MAP[m1['sign_number']]
+            girl_type = VASHA_MAP[m2['sign_number']]
         elif k == 'Tara':
-            from .dispositions import NAKSHATRA_LORDS
-            boy_type = NAKSHATRA_LORDS[m1['nakshatra']-1].title()
-            girl_type = NAKSHATRA_LORDS[m2['nakshatra']-1].title()
+            boy_type = f"Nakshatra {m1['nakshatra']}"
+            girl_type = f"Nakshatra {m2['nakshatra']}"
         elif k == 'Yoni':
-            boy_type = YONI_MAP[m1['nakshatra']].title()
-            girl_type = YONI_MAP[m2['nakshatra']].title()
+            boy_type = YONI_MAP[m1['nakshatra']]
+            girl_type = YONI_MAP[m2['nakshatra']]
         elif k == 'Gana':
-            boy_type = GANA_GROUPS[m1['nakshatra']].title()
-            girl_type = GANA_GROUPS[m2['nakshatra']].title()
+            boy_type = GANA_GROUPS[m1['nakshatra']]
+            girl_type = GANA_GROUPS[m2['nakshatra']]
         elif k == 'Nadi':
-            boy_type = NADI_MAP[m1['nakshatra']].title()
-            girl_type = NADI_MAP[m2['nakshatra']].title()
+            boy_type = NADI_MAP[m1['nakshatra']]
+            girl_type = NADI_MAP[m2['nakshatra']]
         else:
             boy_type = girl_type = ''
         
@@ -918,11 +1066,9 @@ def match_kundli(a: AstroData, b: AstroData) -> Dict[str, Any]:
         'Significance': f"Overall Compatibility: {compatibility_analysis['weighted_percentage']:.1f}% (Traditional: {compatibility_analysis['traditional_percentage']:.1f}%)"
     })
     
-    return {
+    report = {
         'table': table,
-        'enhanced_table': build_enhanced_table(scores, m1, m2, dosha_cancellations),
         'faults': faults,
-        'remedies': {f: REMEDIES.get(f, []) for f in faults},
         'enhanced_remedies': enhanced_remedies,
         'manglik_status': {
             'boy': {'type': mg_a, 'is_manglik': mg_a != 'None'},
@@ -935,24 +1081,25 @@ def match_kundli(a: AstroData, b: AstroData) -> Dict[str, Any]:
         'dosha_cancellations': dosha_cancellations,
         'compatibility_analysis': compatibility_analysis,
         'risk_assessment': risk_assessment,
-        'detailed_interpretation': detailed_interpretation,
-        'constructive_interpretation': constructive_interpretation,
+        'interpretation': dynamic_interpretation,  # NEW KEY ADDED
         'summary': {
             'total_score': total,
             'max_score': max_total,
             'traditional_percentage': compatibility_analysis['traditional_percentage'],
             'weighted_percentage': compatibility_analysis['weighted_percentage'],
-            'overall_compatibility': detailed_interpretation['overall_compatibility']['status'],
+            'overall_compatibility': 'Excellent' if compatibility_analysis['weighted_percentage'] >= 80 else 'Good' if compatibility_analysis['weighted_percentage'] >= 60 else 'Fair' if compatibility_analysis['weighted_percentage'] >= 40 else 'Poor',
             'risk_level': risk_assessment['overall_risk_level'],
             'active_doshas': dosha_cancellations['active_doshas'],
             'canceled_doshas': dosha_cancellations['canceled_doshas'],
             'cancellation_impact': f"{len(dosha_cancellations['canceled_doshas'])} doshas canceled"
         }
     }
+    
+    return refine_node_names(report)
 
 # Example usage
 if __name__ == '__main__':
-    A = AstroData(1990,1,1,10,0,0,5,30,19.07,72.88)
-    B = AstroData(1992,6,15,16,30,0,5,30,28.61,77.23)
+    boy = AstroData(1993,6,8,7,45,0,5,30,25.7806522,84.6681699,ayanamsa='lahiri')
+    girl = AstroData(1994,10,22,4,43,0,5,30,25.6081691,85.06047,ayanamsa='lahiri')
     from pprint import pprint
-    pprint(match_kundli(A, B))
+    pprint(match_kundli(boy, girl))

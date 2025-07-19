@@ -1,5 +1,5 @@
 # Package metadata
-__version__ = "0.2.5"
+__version__ = "0.2.8"
 __author__ = "Mirjan Ali Sha"
 __email__ = "mastools.help@gmail.com"
 
@@ -90,15 +90,6 @@ insights and personal development rather than religious remedies.
 • Love life, career, finance, and health guidance
 • Practical recommendations without religious content
 
-🔮 Yoga Detection:
-• 300+ classical yogas including (InProgress):
-  - Dhan Yogas (Dhan, Dhanakaraka, Dhanapati)
-  - Pancha Mahapurush Yogas (Ruchaka, Bhadra, Hamsa, Malavya, Sasha)
-  - Raj Yogas (Budha-Aditya, Gaja-Kesari, Karmadhipati)
-  - Dhana Yogas for wealth analysis
-  - All 12 types of Kaal Sharpa Dosha variations
-  - Neech Bhang Raj Yoga cancellations
-
 ⚖️  AUTHOR'S APPROACH:
 This library emphasizes evidence-based, practical guidance over religious 
 remedies. All interpretations focus on:
@@ -146,24 +137,10 @@ yogas = detect_yogas(data, dispositions, houses_dict)
 • Health and wellness insights
 • Educational and skill development recommendations
 
-🔧 TECHNICAL SPECIFICATIONS:
-• Swiss Ephemeris integration for precise calculations
-• Multiple Ayanamsa support (Lahiri, Krishnamurthy, etc.)
-• Comprehensive house system options
-• JSON-based interpretation system
-• Matplotlib visualization engine
-
-📞 USAGE TIPS:
-• All functions include detailed docstrings
-• Use help(function_name) for specific guidance  
-• Results include both traditional and weighted compatibility percentages
-• Secular remedies focus on actionable behavioral changes
-• Regular updates expand yoga database and interpretations
-
 🌟 Remember: Your conscious choices and daily efforts shape your destiny more 
 than any planetary configuration. Use these insights as tools for growth! 🌟
 
-For detailed documentation, visit: https://github.com/your-repo/astrokundali
+For detailed documentation, visit: https://github.com/Mirjan-Ali-Sha/astrokundali
 """
     
     print(info_text)
@@ -183,3 +160,26 @@ For detailed documentation, visit: https://github.com/your-repo/astrokundali
     print("💡 Pro Tip: Start with plot_comprehensive_chart() to visualize your birth chart!")
     print("="*80)
 
+
+# 🔮 Yoga Detection:
+# • 300+ classical yogas including (InProgress):
+#   - Dhan Yogas (Dhan, Dhanakaraka, Dhanapati)
+#   - Pancha Mahapurush Yogas (Ruchaka, Bhadra, Hamsa, Malavya, Sasha)
+#   - Raj Yogas (Budha-Aditya, Gaja-Kesari, Karmadhipati)
+#   - Dhana Yogas for wealth analysis
+#   - All 12 types of Kaal Sharpa Dosha variations
+#   - Neech Bhang Raj Yoga cancellations
+
+# 🔧 TECHNICAL SPECIFICATIONS:
+# • Swiss Ephemeris integration for precise calculations
+# • Multiple Ayanamsa support (Lahiri, Krishnamurthy, etc.)
+# • Comprehensive house system options
+# • JSON-based interpretation system
+# • Matplotlib visualization engine
+
+# 📞 USAGE TIPS:
+# • All functions include detailed docstrings
+# • Use help(function_name) for specific guidance  
+# • Results include both traditional and weighted compatibility percentages
+# • Secular remedies focus on actionable behavioral changes
+# • Regular updates expand yoga database and interpretations
