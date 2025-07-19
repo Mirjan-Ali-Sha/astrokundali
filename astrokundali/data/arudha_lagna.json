@@ -1,83 +1,95 @@
 {
   "generic": [
-    "Arudha Lagna represents the image perceived by the world rather than your true self.",
-    "It is calculated by counting anticlockwise from the Lagna lord’s house, with 1st‑house mapped to the 10th and 7th to the 4th as exceptions.",
-    "Planets in or aspecting the Arudha Lagna shape public perception—both strengths and challenges."
+    "Arudha Lagna represents your public image and how others perceive you, not your true self.",
+    "It reveals the mask you wear in society and the impression you create in the world.",
+    "Understanding this helps you align your public persona with your authentic self."
   ],
   "houses": {
     "1": [
-      "Strong public image and leadership presence, projecting confidence and initiative."
+      "Strong public image and natural leadership presence; others see you as confident and decisive.",
+      "Develop authentic leadership skills through mentoring and team-building activities."
     ],
     "2": [
-      "Emphasis on wealth accumulation, family reputation, and persuasive communication."
+      "Public perception focuses on wealth, family values, and eloquent communication.",
+      "Engage in financial literacy education and practice generous charitable giving."
     ],
     "3": [
-      "Highlights communication skills, short journeys, and relationships with siblings."
+      "Image highlights communication skills, creativity, and close relationships.",
+      "Develop writing or speaking abilities and strengthen bonds with siblings and neighbors."
     ],
     "4": [
-      "Focuses on home life, emotional foundations, and property matters."
+      "Public image centers on home, emotional security, and nurturing qualities.",
+      "Create welcoming spaces and engage in community-building activities."
     ],
     "5": [
-      "Creative self‑expression, speculative gains, and educational or romantic pursuits."
+      "Perceived as creative, romantic, and good with children or students.",
+      "Engage in artistic pursuits and volunteer work with youth organizations."
     ],
     "6": [
-      "Service orientation, health resilience, and mastery over daily challenges."
+      "Image emphasizes service, health consciousness, and problem-solving abilities.",
+      "Volunteer in healthcare or social services and maintain personal wellness practices."
     ],
     "7": [
-      "Partnerships, marriage, and one‑on‑one alliances are under public scrutiny."
+      "Public perception focuses on partnerships, diplomacy, and collaborative skills.",
+      "Develop conflict resolution abilities and practice fair negotiation techniques."
     ],
     "8": [
-      "Deep transformation, occult interests, and shared resources become visible."
+      "Seen as mysterious, transformative, and interested in deeper subjects.",
+      "Engage in psychological self-work and help others through difficult transitions."
     ],
     "9": [
-      "Karmic luck, religious standing, and foreign connections define your public fate."
+      "Public image highlights wisdom, teaching abilities, and philosophical insights.",
+      "Share knowledge through teaching, writing, or mentoring others."
     ],
     "10": [
-      "Career achievements, professional status, and public reputation take center stage."
+      "Strong professional reputation and recognized authority in your field.",
+      "Maintain ethical standards and use your influence responsibly to help others."
     ],
     "11": [
-      "Gains through networks, social circles, and sudden opportunities shine forth."
+      "Perceived as well-connected, influential, and successful in group endeavors.",
+      "Use your network to create opportunities for others and support worthy causes."
     ],
     "12": [
-      "Spiritual pursuits, foreign contacts, and hidden strengths subtly influence your image."
+      "Image suggests spiritual depth, international connections, and behind-the-scenes influence.",
+      "Engage in charitable work and spiritual practices while maintaining practical involvement."
     ]
   },
   "planets": {
     "sun": [
-      "Sun as Arudha planet brings visibility, authority, and a commanding public persona."
+      "Sun as Arudha planet creates an authoritative and commanding public presence.",
+      "Practice humble leadership and use your influence to empower others."
     ],
     "moon": [
-      "Moon as Arudha planet softens your image with empathy, imagination, and nurturing appeal."
+      "Moon as Arudha planet creates a nurturing, empathetic public image.",
+      "Channel emotional sensitivity into caring for others and community support."
     ],
     "mars": [
-      "Mars as Arudha planet adds boldness, assertiveness, and a warrior‑like presence."
+      "Mars as Arudha planet projects boldness, courage, and warrior-like presence.",
+      "Use your assertiveness to defend the vulnerable and fight for justice."
     ],
     "mercury": [
-      "Mercury as Arudha planet highlights your wit, communication skills, and adaptability."
+      "Mercury as Arudha planet highlights intelligence, communication, and adaptability.",
+      "Share knowledge through writing, teaching, or facilitating communication between others."
     ],
     "jupiter": [
-      "Jupiter as Arudha planet attracts respect, wisdom, and moral authority in the public eye."
+      "Jupiter as Arudha planet brings respect, wisdom, and moral authority.",
+      "Use your influence to guide others ethically and support educational causes."
     ],
     "venus": [
-      "Venus as Arudha planet enhances charm, elegance, and artistic appeal to your image."
+      "Venus as Arudha planet enhances charm, artistic appeal, and diplomatic skills.",
+      "Promote beauty, harmony, and peace in your community through artistic or social work."
     ],
     "saturn": [
-      "Saturn as Arudha planet lends gravity, discipline, and a serious tone to how you are seen."
+      "Saturn as Arudha planet lends gravity, discipline, and serious reputation.",
+      "Use your reliability to build lasting institutions and support long-term community projects."
     ],
-    "uranus": [
-      "Uranus as Arudha planet projects innovation, unpredictability, and a modern edge."
+    "rahu": [
+      "Rahu as Arudha planet brings unconventional charisma and ambitious drive.",
+      "Channel your unique perspective into innovative solutions for social problems."
     ],
-    "neptune": [
-      "Neptune as Arudha planet adds mystique, compassion, and an aura of spiritual depth."
-    ],
-    "pluto": [
-      "Pluto as Arudha planet emphasizes transformation, power, and intense magnetism."
-    ],
-    "north_node": [
-      "Rahu as Arudha planet brings unconventional charisma, ambition, and a drive for recognition."
-    ],
-    "south_node": [
-      "Ketu as Arudha planet imparts detachment, introspection, and an aura of mystery."
+    "ketu": [
+      "Ketu as Arudha planet creates an aura of detachment and spiritual depth.",
+      "Balance your inner wisdom with practical engagement in worldly responsibilities."
     ]
   }
 }

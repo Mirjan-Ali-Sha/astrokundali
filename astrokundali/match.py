@@ -83,7 +83,7 @@ KOOTA_INFO = {
 }
 
 # Secular remedies (no religious content)
-SECULAR_REMEDIES = {
+REMEDIES = {
     'Varna': [
         'Practice mutual respect for different social backgrounds',
         'Engage in educational activities together',
@@ -738,6 +738,82 @@ def _are_planets_friends(planet1: str, planet2: str) -> bool:
         return True
     return False
 
+def format_remedy_text(remedy_list: List[str]) -> List[str]:
+    """Ensure all remedies are properly formatted sentences"""
+    formatted = []
+    for remedy in remedy_list:
+        # Ensure it ends with a period
+        if not remedy.endswith('.'):
+            remedy += '.'
+        # Ensure it starts with capital letter
+        remedy = remedy[0].upper() + remedy[1:] if remedy else ''
+        formatted.append(remedy)
+    return formatted
+
+def format_table_value(value: str) -> str:
+    """Standardize table display values"""
+    if not value:
+        return 'N/A'
+    return value.title() if value.lower() != value else value
+
+def build_enhanced_table(scores, m1, m2, dosha_cancellations):
+    """Build table with consistent formatting"""
+    
+    # Define display value mappings
+    rashi_names = ['Aries', 'Taurus', 'Gemini', 'Cancer', 'Leo', 'Virgo', 
+                   'Libra', 'Scorpio', 'Sagittarius', 'Capricorn', 'Aquarius', 'Pisces']
+    
+    table = []
+    for k, pts in scores.items():
+        info = KOOTA_INFO[k]
+        
+        # Get properly formatted boy/girl types
+        if k == 'Varna':
+            boy_type = VARNA_NAME[VARNA_MAP[m1['sign_number']]]
+            girl_type = VARNA_NAME[VARNA_MAP[m2['sign_number']]]
+        elif k == 'Vashya':
+            boy_type = VASHA_MAP[m1['sign_number']]
+            girl_type = VASHA_MAP[m2['sign_number']]
+        elif k == 'Tara':
+            from .dispositions import NAKSHATRA_LORDS
+            boy_type = NAKSHATRA_LORDS[m1['nakshatra']-1].title()
+            girl_type = NAKSHATRA_LORDS[m2['nakshatra']-1].title()
+        elif k == 'Yoni':
+            boy_type = YONI_MAP[m1['nakshatra']]
+            girl_type = YONI_MAP[m2['nakshatra']]
+        elif k == 'Graha Maitri':
+            boy_type = m1.get('sign_lord', 'Unknown').title()
+            girl_type = m2.get('sign_lord', 'Unknown').title()
+        elif k == 'Gana':
+            boy_type = GANA_GROUPS[m1['nakshatra']]
+            girl_type = GANA_GROUPS[m2['nakshatra']]
+        elif k == 'Bhakoot':
+            boy_type = rashi_names[m1['sign_number']-1]
+            girl_type = rashi_names[m2['sign_number']-1]
+        elif k == 'Nadi':
+            boy_type = NADI_MAP[m1['nakshatra']]
+            girl_type = NADI_MAP[m2['nakshatra']]
+        else:
+            boy_type = 'N/A'
+            girl_type = 'N/A'
+        
+        # Add cancellation indicator with proper formatting
+        significance = info['desc']
+        if k in dosha_cancellations['canceled_doshas']:
+            significance += f" (✓ CANCELED: {dosha_cancellations['cancellation_reasons'][k]})"
+        
+        table.append({
+            'Particular': f"{k} Koota",
+            'Boy': boy_type,
+            'Girl': girl_type,
+            'Max': info['max'],
+            'Obtained': pts,
+            'Significance': significance
+        })
+    
+    return table
+
+
 def match_kundli(a: AstroData, b: AstroData) -> Dict[str, Any]:
     """
     Main secular matching function with all enhancements
@@ -798,24 +874,24 @@ def match_kundli(a: AstroData, b: AstroData) -> Dict[str, Any]:
         
         # Determine boy/girl types
         if k == 'Varna':
-            boy_type = VARNA_NAME[VARNA_MAP[m1['sign_number']]]
-            girl_type = VARNA_NAME[VARNA_MAP[m2['sign_number']]]
+            boy_type = VARNA_NAME[VARNA_MAP[m1['sign_number']]].title()
+            girl_type = VARNA_NAME[VARNA_MAP[m2['sign_number']]].title()
         elif k == 'Vashya':
-            boy_type = VASHA_MAP[m1['sign_number']]
-            girl_type = VASHA_MAP[m2['sign_number']]
+            boy_type = VASHA_MAP[m1['sign_number']].title()
+            girl_type = VASHA_MAP[m2['sign_number']].title()
         elif k == 'Tara':
             from .dispositions import NAKSHATRA_LORDS
-            boy_type = NAKSHATRA_LORDS[m1['nakshatra']-1]
-            girl_type = NAKSHATRA_LORDS[m2['nakshatra']-1]
+            boy_type = NAKSHATRA_LORDS[m1['nakshatra']-1].title()
+            girl_type = NAKSHATRA_LORDS[m2['nakshatra']-1].title()
         elif k == 'Yoni':
-            boy_type = YONI_MAP[m1['nakshatra']]
-            girl_type = YONI_MAP[m2['nakshatra']]
+            boy_type = YONI_MAP[m1['nakshatra']].title()
+            girl_type = YONI_MAP[m2['nakshatra']].title()
         elif k == 'Gana':
-            boy_type = GANA_GROUPS[m1['nakshatra']]
-            girl_type = GANA_GROUPS[m2['nakshatra']]
+            boy_type = GANA_GROUPS[m1['nakshatra']].title()
+            girl_type = GANA_GROUPS[m2['nakshatra']].title()
         elif k == 'Nadi':
-            boy_type = NADI_MAP[m1['nakshatra']]
-            girl_type = NADI_MAP[m2['nakshatra']]
+            boy_type = NADI_MAP[m1['nakshatra']].title()
+            girl_type = NADI_MAP[m2['nakshatra']].title()
         else:
             boy_type = girl_type = ''
         
@@ -844,8 +920,9 @@ def match_kundli(a: AstroData, b: AstroData) -> Dict[str, Any]:
     
     return {
         'table': table,
+        'enhanced_table': build_enhanced_table(scores, m1, m2, dosha_cancellations),
         'faults': faults,
-        'secular_remedies': {f: SECULAR_REMEDIES.get(f, []) for f in faults},
+        'remedies': {f: REMEDIES.get(f, []) for f in faults},
         'enhanced_remedies': enhanced_remedies,
         'manglik_status': {
             'boy': {'type': mg_a, 'is_manglik': mg_a != 'None'},
